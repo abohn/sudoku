@@ -25,20 +25,32 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      # The DB is gitignored; restore it from cache so incremental crawls work.
+      - name: Restore database cache
+        uses: actions/cache@v4
+        with:
+          path: data/sudoku.db
+          key: sudoku-db-${{ runner.os }}
+          restore-keys: sudoku-db-
+
       - name: Run crawler
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           CTC_CHANNEL_ID: "@crackingthecryptic"
-        run: python -m app.crawler.run --months ${{ inputs.months || 2 }}
+        run: |
+          mkdir -p data
+          python -m app.crawler.run --months ${{ inputs.months || 2 }}
 
       - name: Export static data
         run: python scripts/export_static.py
 
-      - name: Commit updated data
+      # Cache is saved automatically after the job (even on failure) by actions/cache.
+
+      - name: Commit updated data.json
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/sudoku.db frontend/public/data.json
+          git add frontend/public/data.json
           git diff --staged --quiet && echo "Nothing to commit" && exit 0
           git commit -m "chore: update puzzle data $(date -u +%Y-%m-%d)"
           git push

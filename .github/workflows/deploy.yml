@@ -41,7 +41,6 @@ jobs:
       - name: Build
         working-directory: frontend
         env:
-          # Sets the Vite base path to /repo-name/ for GitHub Pages.
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build
 
