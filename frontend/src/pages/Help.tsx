@@ -115,8 +115,6 @@ export default function Help() {
               <strong>Why no direct link to the puzzle grid?</strong> We deliberately route through
               YouTube rather than linking directly to SudokuPad. Cracking the Cryptic depends on
               YouTube views to sustain the channel. Even a few seconds of watch time supports them.
-              If you want to solve blind, open the video, note the SudokuPad link in the
-              description, then close it before watching any of the solve.
             </p>
           </div>
         </Section>
