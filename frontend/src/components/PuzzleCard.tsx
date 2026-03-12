@@ -1,6 +1,9 @@
 import type { VideoSummary } from "../types";
 import { RuleTag } from "./RuleFilter";
 
+const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+const NOW = Date.now();
+
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -33,8 +36,10 @@ interface Props {
   isFavorite: boolean;
   isCompleted: boolean;
   completedAt: string | undefined;
+  isWatchlisted: boolean;
   onToggleFavorite: () => void;
   onToggleCompleted: () => void;
+  onToggleWatchlist: () => void;
 }
 
 export default function PuzzleCard({
@@ -44,8 +49,10 @@ export default function PuzzleCard({
   isFavorite,
   isCompleted,
   completedAt,
+  isWatchlisted,
   onToggleFavorite,
   onToggleCompleted,
+  onToggleWatchlist,
 }: Props) {
   const diff = difficultyLabel(video.difficulty_score);
   const ytUrl = `https://www.youtube.com/watch?v=${video.youtube_id}`;
@@ -64,6 +71,8 @@ export default function PuzzleCard({
         day: "numeric",
       })
     : null;
+
+  const isNew = NOW - new Date(video.published_at).getTime() < FOURTEEN_DAYS_MS;
 
   return (
     <article
@@ -85,11 +94,21 @@ export default function PuzzleCard({
             No thumbnail
           </div>
         )}
+
+        {/* New badge */}
+        {isNew && (
+          <span className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+            NEW
+          </span>
+        )}
+
+        {/* Has puzzle badge */}
         {video.puzzle_url && (
           <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
             Has puzzle
           </span>
         )}
+
         {/* Favorite button */}
         <button
           onClick={(e) => {
@@ -152,7 +171,7 @@ export default function PuzzleCard({
           </div>
         )}
 
-        {/* Links + complete button */}
+        {/* Links + action buttons */}
         <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
           <a
             href={ytUrl}
@@ -172,6 +191,17 @@ export default function PuzzleCard({
               Solve
             </a>
           )}
+          <button
+            onClick={onToggleWatchlist}
+            title={isWatchlisted ? "Remove from watchlist" : "Save to watchlist"}
+            className={`px-2.5 text-xs py-1.5 rounded-lg font-medium transition-colors ${
+              isWatchlisted
+                ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            }`}
+          >
+            {isWatchlisted ? "Saved" : "Save"}
+          </button>
           <button
             onClick={onToggleCompleted}
             title={isCompleted ? "Mark as not completed" : "Mark as completed"}

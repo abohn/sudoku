@@ -20,7 +20,6 @@ interface StaticData {
   setters: Setter[];
 }
 
-// difficulty label → [min_inclusive, max_exclusive] (null = unbounded)
 const DIFFICULTY_RANGES: Record<DifficultyLabel, [number | null, number | null]> = {
   easy: [null, 3.0],
   medium: [3.0, 5.5],
@@ -28,12 +27,10 @@ const DIFFICULTY_RANGES: Record<DifficultyLabel, [number | null, number | null]>
   brutal: [7.5, null],
 };
 
-// Singleton — load data.json once for the lifetime of the page.
 let _promise: Promise<StaticData> | null = null;
 
-function loadData(): Promise<StaticData> {
+export function loadData(): Promise<StaticData> {
   if (!_promise) {
-    // import.meta.env.BASE_URL is "/" locally and "/repo-name/" on GitHub Pages.
     _promise = fetch(`${import.meta.env.BASE_URL}data.json`).then((r) => {
       if (!r.ok) throw new Error(`Failed to load data.json (${r.status})`);
       return r.json() as Promise<StaticData>;
@@ -52,6 +49,11 @@ export async function fetchSetters(): Promise<Setter[]> {
   return setters;
 }
 
+export async function fetchAllVideos(): Promise<VideoSummary[]> {
+  const { videos } = await loadData();
+  return videos;
+}
+
 export async function fetchPuzzles(params: {
   rules?: string[];
   match?: MatchMode;
@@ -60,6 +62,10 @@ export async function fetchPuzzles(params: {
   has_puzzle_url?: boolean;
   setter?: string;
   difficulties?: DifficultyLabel[];
+  searchQuery?: string;
+  solveTime?: string;
+  watchlistOnly?: boolean;
+  watchlistIds?: Set<string>;
   page?: number;
   per_page?: number;
 }): Promise<PaginatedVideos> {
@@ -71,6 +77,10 @@ export async function fetchPuzzles(params: {
     has_puzzle_url,
     setter,
     difficulties = [],
+    searchQuery = "",
+    solveTime,
+    watchlistOnly = false,
+    watchlistIds,
     page = 1,
     per_page = 24,
   } = params;
@@ -78,7 +88,6 @@ export async function fetchPuzzles(params: {
   const { videos } = await loadData();
   let items = videos;
 
-  // Rule filter
   if (rules.length > 0) {
     items = items.filter((v) => {
       const slugs = new Set(v.rules.map((vr) => vr.rule.slug));
@@ -86,19 +95,16 @@ export async function fetchPuzzles(params: {
     });
   }
 
-  // Puzzle URL filter
   if (has_puzzle_url === true) {
     items = items.filter((v) => v.puzzle_url != null);
   } else if (has_puzzle_url === false) {
     items = items.filter((v) => v.puzzle_url == null);
   }
 
-  // Setter filter
   if (setter) {
     items = items.filter((v) => v.setter_name === setter);
   }
 
-  // Difficulty filter
   if (difficulties.length > 0) {
     items = items.filter((v) => {
       if (v.difficulty_score == null) return false;
@@ -112,7 +118,30 @@ export async function fetchPuzzles(params: {
     });
   }
 
-  // Sort (stable — spread to avoid mutating the cached array)
+  if (searchQuery.trim()) {
+    const q = searchQuery.trim().toLowerCase();
+    items = items.filter(
+      (v) =>
+        v.title.toLowerCase().includes(q) || (v.setter_name?.toLowerCase().includes(q) ?? false)
+    );
+  }
+
+  if (solveTime) {
+    items = items.filter((v) => {
+      const mins = v.solve_duration_seconds != null ? v.solve_duration_seconds / 60 : null;
+      if (mins == null) return false;
+      if (solveTime === "lt30") return mins < 30;
+      if (solveTime === "30-60") return mins >= 30 && mins < 60;
+      if (solveTime === "60-90") return mins >= 60 && mins < 90;
+      if (solveTime === "gt90") return mins >= 90;
+      return true;
+    });
+  }
+
+  if (watchlistOnly && watchlistIds) {
+    items = items.filter((v) => watchlistIds.has(v.youtube_id));
+  }
+
   items = [...items].sort((a, b) => {
     let av: number | string | null;
     let bv: number | string | null;

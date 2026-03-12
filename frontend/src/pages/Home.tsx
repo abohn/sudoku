@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { fetchPuzzles, fetchRules, fetchSetters } from "../api";
 import PuzzleCard from "../components/PuzzleCard";
 import RuleFilter from "../components/RuleFilter";
@@ -11,34 +12,69 @@ import type {
   Setter,
   SortOption,
   SortOrder,
+  VideoSummary,
 } from "../types";
 
 const PER_PAGE = 24;
 
+// Helpers to read/write URL search params cleanly
+function useParam(params: URLSearchParams, key: string): string {
+  return params.get(key) ?? "";
+}
+
 export default function Home() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // All filter state lives in the URL
+  const searchQuery = useParam(searchParams, "q");
+  const selectedRules = searchParams.get("rules")?.split(",").filter(Boolean) ?? [];
+  const match = (searchParams.get("match") ?? "all") as MatchMode;
+  const sort = (searchParams.get("sort") ?? "published") as SortOption;
+  const order = (searchParams.get("order") ?? "desc") as SortOrder;
+  const hasPuzzleUrl = searchParams.get("puzzle") === "1" ? true : undefined;
+  const selectedSetter = searchParams.get("setter") ?? null;
+  const selectedDifficulties = (searchParams.get("diff")?.split(",").filter(Boolean) ??
+    []) as DifficultyLabel[];
+  const solveTime = searchParams.get("solve") ?? undefined;
+  const watchlistOnly = searchParams.get("watchlist") === "1";
+  const page = parseInt(searchParams.get("page") ?? "1", 10);
+
   const [rules, setRules] = useState<Rule[]>([]);
   const [setters, setSetters] = useState<Setter[]>([]);
   const [results, setResults] = useState<PaginatedVideos | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [selectedRules, setSelectedRules] = useState<string[]>([]);
-  const [match, setMatch] = useState<MatchMode>("all");
-  const [sort, setSort] = useState<SortOption>("published");
-  const [order, setOrder] = useState<SortOrder>("desc");
-  const [hasPuzzleUrl, setHasPuzzleUrl] = useState<boolean | undefined>(undefined);
-  const [selectedDifficulties, setSelectedDifficulties] = useState<DifficultyLabel[]>([]);
-  const [selectedSetter, setSelectedSetter] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
 
-  const { favorites, completed, toggleFavorite, toggleCompleted } = useUserData();
+  // Random puzzle
+  const [randomPick, setRandomPick] = useState<VideoSummary | null>(null);
+
+  const { favorites, completed, watchlist, toggleFavorite, toggleCompleted, toggleWatchlist } =
+    useUserData();
+
+  function setParam(key: string, value: string | null) {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) next.set(key, value);
+        else next.delete(key);
+        // Reset to page 1 when any filter changes (except page itself)
+        if (key !== "page") next.delete("page");
+        return next;
+      },
+      { replace: true }
+    );
+  }
 
   const activeFilterCount =
-    selectedRules.length + selectedDifficulties.length + (selectedSetter ? 1 : 0);
+    selectedRules.length +
+    selectedDifficulties.length +
+    (selectedSetter ? 1 : 0) +
+    (searchQuery ? 1 : 0) +
+    (solveTime ? 1 : 0) +
+    (watchlistOnly ? 1 : 0);
 
-  // Load rules and setters on mount
   useEffect(() => {
     fetchRules()
       .then(setRules)
@@ -61,56 +97,140 @@ export default function Home() {
           has_puzzle_url: hasPuzzleUrl,
           setter: selectedSetter ?? undefined,
           difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
+          searchQuery,
+          solveTime,
+          watchlistOnly,
+          watchlistIds: watchlist,
           page: p,
           per_page: PER_PAGE,
         });
         setResults(data);
-        setPage(p);
       } catch {
-        setError("Failed to load puzzles. Is the backend running?");
+        setError("Failed to load puzzles.");
       } finally {
         setLoading(false);
       }
     },
-    [selectedRules, match, sort, order, hasPuzzleUrl, selectedSetter, selectedDifficulties]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [searchParams, watchlist]
   );
 
   useEffect(() => {
-    load(1);
-  }, [load]);
+    load(page);
+  }, [load, page]);
+
+  async function pickRandom() {
+    try {
+      const all = await fetchPuzzles({
+        rules: selectedRules,
+        match,
+        sort,
+        order,
+        has_puzzle_url: hasPuzzleUrl,
+        setter: selectedSetter ?? undefined,
+        difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
+        searchQuery,
+        solveTime,
+        watchlistOnly,
+        watchlistIds: watchlist,
+        page: 1,
+        per_page: 9999,
+      });
+      if (all.items.length === 0) return;
+      const pick = all.items[Math.floor(Math.random() * all.items.length)];
+      setRandomPick(pick);
+    } catch {
+      /* ignore */
+    }
+  }
 
   function toggleRule(slug: string) {
-    setSelectedRules((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-    );
+    const next = selectedRules.includes(slug)
+      ? selectedRules.filter((s) => s !== slug)
+      : [...selectedRules, slug];
+    setParam("rules", next.length ? next.join(",") : null);
   }
 
   function toggleDifficulty(d: DifficultyLabel) {
-    setSelectedDifficulties((prev) =>
-      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
-    );
+    const next = selectedDifficulties.includes(d)
+      ? selectedDifficulties.filter((x) => x !== d)
+      : [...selectedDifficulties, d];
+    setParam("diff", next.length ? next.join(",") : null);
   }
 
   return (
     <div className="min-h-screen">
+      {/* Random puzzle modal */}
+      {randomPick && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setRandomPick(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {randomPick.thumbnail_url && (
+              <img
+                src={randomPick.thumbnail_url}
+                alt={randomPick.title}
+                className="w-full aspect-video object-cover"
+              />
+            )}
+            <div className="p-4">
+              <p className="text-xs text-gray-400 mb-1 uppercase tracking-wide font-medium">
+                Random pick
+              </p>
+              <p className="font-semibold text-gray-900 leading-snug mb-1">{randomPick.title}</p>
+              {randomPick.setter_name && (
+                <p className="text-sm text-gray-500 mb-3">by {randomPick.setter_name}</p>
+              )}
+              <div className="flex gap-2">
+                <a
+                  href={`https://www.youtube.com/watch?v=${randomPick.youtube_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 text-center text-sm py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium"
+                >
+                  Watch
+                </a>
+                {randomPick.puzzle_url && (
+                  <a
+                    href={
+                      randomPick.puzzle_start_seconds
+                        ? `https://www.youtube.com/watch?v=${randomPick.youtube_id}&t=${randomPick.puzzle_start_seconds}`
+                        : `https://www.youtube.com/watch?v=${randomPick.youtube_id}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 text-center text-sm py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium"
+                  >
+                    Solve
+                  </a>
+                )}
+                <button
+                  onClick={() => setRandomPick(null)}
+                  className="px-3 text-sm py-2 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
           <div>
             <h1 className="text-lg font-bold text-gray-900">CTC Puzzle Database</h1>
             <p className="text-xs text-gray-500 hidden sm:block">
               Cracking the Cryptic — searchable by rule type
             </p>
           </div>
-          <a
-            href="https://docs.google.com/forms/d/e/1FAIpQLSd8dru84uSsy8eMWLn2Jz44mhbOxp6cn3lAVyO1f_kq4kwrrA/viewform"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-auto text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
-          >
-            Feedback
-          </a>
-          <div className="flex items-center gap-2 flex-wrap">
+
+          <div className="ml-auto flex items-center gap-2 flex-wrap">
             {/* Mobile filter toggle */}
             <button
               onClick={() => setShowFilters((v) => !v)}
@@ -125,7 +245,7 @@ export default function Home() {
             </button>
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value as SortOption)}
+              onChange={(e) => setParam("sort", e.target.value)}
               className="text-sm border border-gray-300 rounded-lg px-2 py-1.5 bg-white"
             >
               <option value="published">Date</option>
@@ -134,7 +254,7 @@ export default function Home() {
               <option value="difficulty">Difficulty</option>
             </select>
             <button
-              onClick={() => setOrder((o) => (o === "desc" ? "asc" : "desc"))}
+              onClick={() => setParam("order", order === "desc" ? "asc" : "desc")}
               className="text-sm border border-gray-300 rounded-lg px-2 py-1.5 bg-white hover:bg-gray-50"
               title="Toggle sort order"
             >
@@ -144,31 +264,58 @@ export default function Home() {
               <input
                 type="checkbox"
                 checked={hasPuzzleUrl === true}
-                onChange={(e) => setHasPuzzleUrl(e.target.checked ? true : undefined)}
+                onChange={(e) => setParam("puzzle", e.target.checked ? "1" : null)}
                 className="rounded"
               />
               <span className="hidden sm:inline">Has puzzle link</span>
               <span className="sm:hidden">Puzzle link</span>
             </label>
+            <button
+              onClick={pickRandom}
+              className="text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
+              title="Pick a random puzzle from current filters"
+            >
+              Random
+            </button>
+            <Link
+              to="/stats"
+              className="text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
+            >
+              Stats
+            </Link>
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSd8dru84uSsy8eMWLn2Jz44mhbOxp6cn3lAVyO1f_kq4kwrrA/viewform"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
+            >
+              Feedback
+            </a>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6 items-start">
-        {/* Sidebar — always visible on lg+, toggle-controlled on mobile */}
+        {/* Sidebar */}
         <div className={showFilters ? "block w-full lg:block" : "hidden lg:block"}>
           <RuleFilter
             rules={rules}
             selected={selectedRules}
             match={match}
             onToggle={toggleRule}
-            onMatchChange={setMatch}
-            onClear={() => setSelectedRules([])}
+            onMatchChange={(m) => setParam("match", m)}
+            onClear={() => setParam("rules", null)}
             selectedDifficulties={selectedDifficulties}
             onToggleDifficulty={toggleDifficulty}
             setters={setters}
             selectedSetter={selectedSetter}
-            onSelectSetter={setSelectedSetter}
+            onSelectSetter={(name) => setParam("setter", name)}
+            searchQuery={searchQuery}
+            onSearchChange={(q) => setParam("q", q || null)}
+            solveTime={solveTime}
+            onSolveTimeChange={(v) => setParam("solve", v)}
+            watchlistOnly={watchlistOnly}
+            onWatchlistOnlyChange={(v) => setParam("watchlist", v ? "1" : null)}
           />
         </div>
 
@@ -227,8 +374,10 @@ export default function Home() {
                       isFavorite={favorites.has(video.youtube_id)}
                       isCompleted={!!completed[video.youtube_id]}
                       completedAt={completed[video.youtube_id]}
+                      isWatchlisted={watchlist.has(video.youtube_id)}
                       onToggleFavorite={() => toggleFavorite(video.youtube_id)}
                       onToggleCompleted={() => toggleCompleted(video.youtube_id)}
+                      onToggleWatchlist={() => toggleWatchlist(video.youtube_id)}
                     />
                   ))}
               </div>
@@ -236,7 +385,7 @@ export default function Home() {
               {results.pages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-8">
                   <button
-                    onClick={() => load(page - 1)}
+                    onClick={() => setParam("page", String(page - 1))}
                     disabled={page <= 1}
                     className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
                   >
@@ -246,7 +395,7 @@ export default function Home() {
                     Page {page} of {results.pages}
                   </span>
                   <button
-                    onClick={() => load(page + 1)}
+                    onClick={() => setParam("page", String(page + 1))}
                     disabled={page >= results.pages}
                     className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
                   >
@@ -258,11 +407,7 @@ export default function Home() {
           ) : !loading ? (
             <div className="text-center py-16 text-gray-400">
               <p className="text-lg mb-1">No puzzles found</p>
-              <p className="text-sm">
-                {results?.total === 0 && selectedRules.length > 0
-                  ? "Try removing some rule filters, or run the crawler to populate the database."
-                  : "Run the crawler to populate the database."}
-              </p>
+              <p className="text-sm">Try adjusting your filters.</p>
             </div>
           ) : null}
         </main>

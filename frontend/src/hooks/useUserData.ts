@@ -1,19 +1,20 @@
 /**
- * Persists per-user puzzle state (favorites + completed) in localStorage.
- * No backend or auth required — state is per-browser.
+ * Persists per-user puzzle state (favorites, completed, watchlist) in localStorage.
  *
  * Schema:
- *   ctc_favorites  → JSON string[]   of youtube_ids
- *   ctc_completed  → JSON Record<youtube_id, ISO timestamp>
+ *   ctc_favorites  → JSON string[]              of youtube_ids
+ *   ctc_completed  → JSON Record<id, ISO string> of youtube_ids → completion timestamp
+ *   ctc_watchlist  → JSON string[]              of youtube_ids ("want to solve")
  */
 import { useState } from "react";
 
 const FAVORITES_KEY = "ctc_favorites";
 const COMPLETED_KEY = "ctc_completed";
+const WATCHLIST_KEY = "ctc_watchlist";
 
-function loadFavorites(): Set<string> {
+function loadSet(key: string): Set<string> {
   try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
+    const raw = localStorage.getItem(key);
     return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
   } catch {
     return new Set();
@@ -30,8 +31,9 @@ function loadCompleted(): Record<string, string> {
 }
 
 export function useUserData() {
-  const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
+  const [favorites, setFavorites] = useState<Set<string>>(() => loadSet(FAVORITES_KEY));
   const [completed, setCompleted] = useState<Record<string, string>>(loadCompleted);
+  const [watchlist, setWatchlist] = useState<Set<string>>(() => loadSet(WATCHLIST_KEY));
 
   function toggleFavorite(youtubeId: string) {
     setFavorites((prev) => {
@@ -53,5 +55,15 @@ export function useUserData() {
     });
   }
 
-  return { favorites, completed, toggleFavorite, toggleCompleted };
+  function toggleWatchlist(youtubeId: string) {
+    setWatchlist((prev) => {
+      const next = new Set(prev);
+      if (next.has(youtubeId)) next.delete(youtubeId);
+      else next.add(youtubeId);
+      localStorage.setItem(WATCHLIST_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  }
+
+  return { favorites, completed, watchlist, toggleFavorite, toggleCompleted, toggleWatchlist };
 }

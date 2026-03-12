@@ -8,6 +8,13 @@ const DIFFICULTIES: { label: DifficultyLabel; display: string; activeCls: string
   { label: "brutal", display: "Brutal", activeCls: "bg-red-500 text-white border-red-500" },
 ];
 
+const SOLVE_TIMES: { value: string; display: string }[] = [
+  { value: "lt30", display: "≤30 min" },
+  { value: "30-60", display: "30–60 min" },
+  { value: "60-90", display: "60–90 min" },
+  { value: "gt90", display: "90+ min" },
+];
+
 interface Props {
   rules: Rule[];
   selected: string[];
@@ -20,6 +27,12 @@ interface Props {
   setters: Setter[];
   selectedSetter: string | null;
   onSelectSetter: (name: string | null) => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
+  solveTime: string | undefined;
+  onSolveTimeChange: (v: string | null) => void;
+  watchlistOnly: boolean;
+  onWatchlistOnlyChange: (v: boolean) => void;
 }
 
 export function RuleTag({
@@ -61,6 +74,12 @@ export default function RuleFilter({
   setters,
   selectedSetter,
   onSelectSetter,
+  searchQuery,
+  onSearchChange,
+  solveTime,
+  onSolveTimeChange,
+  watchlistOnly,
+  onWatchlistOnlyChange,
 }: Props) {
   const common = rules.filter((r) => !r.is_rare && r.slug !== "unique-rules");
   const rare = rules.filter((r) => r.is_rare || r.slug === "unique-rules");
@@ -68,8 +87,32 @@ export default function RuleFilter({
   return (
     <aside className="w-full lg:w-64 shrink-0">
       <div className="bg-white rounded-xl border border-gray-200 p-4 sticky top-4 overflow-y-auto max-h-[calc(100vh-6rem)]">
-        {/* ---- Difficulty ---- */}
+        {/* ---- Search ---- */}
         <div className="mb-4">
+          <input
+            type="search"
+            placeholder="Search title or setter…"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* ---- Watchlist ---- */}
+        <div className="mb-4">
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={watchlistOnly}
+              onChange={(e) => onWatchlistOnlyChange(e.target.checked)}
+              className="rounded"
+            />
+            <span>Watchlist only</span>
+          </label>
+        </div>
+
+        {/* ---- Difficulty ---- */}
+        <div className="mb-4 border-t pt-3">
           <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">
             Difficulty
           </p>
@@ -82,6 +125,31 @@ export default function RuleFilter({
                   onClick={() => onToggleDifficulty(label)}
                   className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
                     active ? activeCls : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {display}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ---- Solve time ---- */}
+        <div className="mb-4 border-t pt-3">
+          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">
+            Solve time
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {SOLVE_TIMES.map(({ value, display }) => {
+              const active = solveTime === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => onSolveTimeChange(active ? null : value)}
+                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                    active
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   {display}
