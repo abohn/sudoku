@@ -239,6 +239,90 @@ def extract_puzzle_start_seconds(description: str) -> int | None:
 
 
 # ---------------------------------------------------------------------------
+# Video type detection
+# ---------------------------------------------------------------------------
+
+# Hard-reject patterns: always filter out regardless of description content.
+# These are definitively word/non-logic puzzles on the CTC channel.
+# Note: the puzzle-URL check runs BEFORE this, so sudoku videos with any of
+# these words in their title (e.g. "Making Connections, Sudoku Style") are
+# already saved by the time we reach this check.
+_HARD_REJECT_RE = re.compile(
+    r"\bcrossword\b"
+    r"|\bwordle\b"
+    r"|\bspelling\s+bee\b"
+    r"|\bminutecryptic\b"
+    r"|\bplusword\b"
+    r"|\bquordle\b"
+    r"|\boctordle\b"
+    r"|\bonly connect\b"  # BBC word/trivia game
+    r"|\bquick cryptic\b"  # Times Quick Cryptic crossword
+    r"|\bconnections\b"  # NYT Connections word game
+    r"|\bcodeword\b"  # crossword variant
+    r"|\bletterboxed\b"  # NYT word game
+    r"|\bblue\s+prince\b",  # video game series streamed by CTC
+    re.IGNORECASE,
+)
+
+# Soft-reject patterns: filter out UNLESS the description has positive signals.
+# Used for ambiguous titles like "Experts Play X" where X could be a logic puzzle.
+_SOFT_REJECT_RE = re.compile(
+    r"\bexperts?\s+plays?\b",  # "Experts Play" / "Expert Plays" — hosts playing a game
+    re.IGNORECASE,
+)
+
+# A puzzle URL in the description is the strongest positive signal.
+_PUZZLE_URL_QUICK_RE = re.compile(
+    r"https?://(?:sudokupad\.app|app\.crackingthecryptic\.com/sudoku|(?:www\.)?f-puzzles\.com)",
+    re.IGNORECASE,
+)
+
+# Logic/pencil puzzle vocabulary in the puzzle-rules section of the description.
+# We check the stripped section (not the full description) to avoid matching
+# sudoku-related words in CTC's promotional boilerplate.
+_PUZZLE_VOCAB_RE = re.compile(
+    r"\bsudoku\b|\bkiller\b|\bthermos?\b|\brenban\b|\bwhispers\b|\bfog\s+of\s+war\b"
+    r"|\bnurikabe\b|\bnonogram\b|\bkakuro\b|\bhitori\b|\bstar\s+battle\b|\bgalaxy\b"
+    r"|\bloop\b|\bslitherlink\b|\bminesweeper\b|\bskyscraper\b|\barrow\b",
+    re.IGNORECASE,
+)
+
+
+def is_puzzle_video(title: str, description: str = "") -> bool:
+    """Return True if this looks like a logic/pencil puzzle video.
+
+    Keeps sudoku, non-standard logic puzzles (Nurikabe, Star Battle, etc.),
+    and any video with a SudokuPad/f-puzzles link.
+
+    Rejects crosswords, Wordle, spelling bees, and video-game streams.
+
+    Decision order:
+    1. Puzzle URL in description → always keep.
+    2. Hard-reject title pattern (crossword, wordle) → always filter.
+    3. Soft-reject title pattern (Experts Play, Blue Prince) → filter unless
+       the boilerplate-stripped description contains logic-puzzle vocabulary.
+    4. Otherwise → keep.
+    """
+    description = description or ""
+    title = title or ""
+
+    # 1. Strongest positive signal: a puzzle link in the description
+    if _PUZZLE_URL_QUICK_RE.search(description):
+        return True
+
+    # 2. Hard reject — word puzzles / clearly non-logic content
+    if _HARD_REJECT_RE.search(title):
+        return False
+
+    # 3. Soft reject — ambiguous, check boilerplate-stripped description
+    if _SOFT_REJECT_RE.search(title):
+        rules_section = _puzzle_rules_section(description)
+        return bool(_PUZZLE_VOCAB_RE.search(rules_section))
+
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Difficulty scoring
 # ---------------------------------------------------------------------------
 

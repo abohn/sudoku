@@ -20,6 +20,7 @@ Cache file: data/crawl_cache.json
     sudokupad_rules_text str   — metadata.rules from puzzle JSON (empty string if absent)
     sudokupad_raw_keys   list  — top-level keys present in puzzle JSON (for structural detection)
     sudokupad_cages      list  — cages array from puzzle JSON (for killer detection)
+    sudokupad_author     str   — metadata.author from puzzle JSON (empty string if absent)
 """
 
 import json
@@ -126,6 +127,7 @@ class CrawlCache:
         rules_text: str,
         raw_keys: list[str],
         cages: list[dict],
+        author: str = "",
     ):
         """Store SudokuPad puzzle data for one video.
 
@@ -137,4 +139,5 @@ class CrawlCache:
         entry["sudokupad_rules_text"] = rules_text
         entry["sudokupad_raw_keys"] = raw_keys
         entry["sudokupad_cages"] = cages
+        entry["sudokupad_author"] = author
         self._dirty = True

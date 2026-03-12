@@ -32,6 +32,7 @@ from app.crawler.rule_parser import (
     extract_puzzle_start_seconds,
     extract_puzzle_url,
     extract_setter,
+    is_puzzle_video,
     parse_rules,
 )
 from app.crawler.sudokupad import fetch_puzzle_data, parse_rules_from_data
@@ -78,25 +79,40 @@ def upsert_video(db: Session, data: dict) -> Video:
 
 
 def _ensure_sudokupad_cached(cache: CrawlCache, youtube_id: str, puzzle_url: str | None):
-    """Fetch SudokuPad data for this video and store it in cache if not already present."""
-    if cache.has_sudokupad(youtube_id):
+    """Fetch SudokuPad data for this video and store it in cache if not already present.
+
+    Re-fetches if the cached entry is missing the `sudokupad_author` field,
+    which was added after the initial cache schema was established.
+    """
+    entry = cache.get(youtube_id)
+    already_fetched = bool(entry and entry.get("sudokupad_fetched"))
+    has_author_field = entry is not None and "sudokupad_author" in entry
+
+    # Skip if we have a non-empty result, or if there's no puzzle URL to fetch.
+    # Re-fetch if we have a puzzle URL but previously got nothing (empty author
+    # AND empty rules) — this handles cases where the old parser silently failed.
+    has_content = bool(
+        entry and (entry.get("sudokupad_author") or entry.get("sudokupad_rules_text"))
+    )
+    if already_fetched and has_author_field and (has_content or not puzzle_url):
         return
 
     if not puzzle_url:
-        # No puzzle URL — record the attempt so we don't retry on every run
-        cache.put_sudokupad(youtube_id, rules_text="", raw_keys=[], cages=[])
+        cache.put_sudokupad(youtube_id, rules_text="", raw_keys=[], cages=[], author="")
         return
 
     data = fetch_puzzle_data(puzzle_url)
     if data:
+        meta = data.get("metadata", {})
         cache.put_sudokupad(
             youtube_id,
-            rules_text=data.get("metadata", {}).get("rules", ""),
+            rules_text=meta.get("rules", ""),
             raw_keys=list(data.keys()),
             cages=data.get("cages", []),
+            author=meta.get("author", ""),
         )
     else:
-        cache.put_sudokupad(youtube_id, rules_text="", raw_keys=[], cages=[])
+        cache.put_sudokupad(youtube_id, rules_text="", raw_keys=[], cages=[], author="")
 
 
 def attach_rules(db: Session, video: Video, cache: CrawlCache, youtube_id: str, description: str):
@@ -144,10 +160,13 @@ def _reprocess(cache: CrawlCache):
     entries = list(cache._data.items())
     print(f"  Processing {len(entries)} cached video(s)...")
     for i, (youtube_id, entry) in enumerate(entries, 1):
+        title = entry.get("title", "") or ""
+        description = entry.get("description", "") or ""
+        if not is_puzzle_video(title, description):
+            continue
         video = db.query(Video).filter(Video.youtube_id == youtube_id).first()
         if not video:
             continue
-        description = entry.get("description", "")
         attach_rules(db, video, cache, youtube_id, description)
         if i % 100 == 0:
             db.commit()
@@ -224,11 +243,20 @@ def crawl(
 
             desc = entry.get("description", "") or ""
             title = entry.get("title", "") or ""
+
+            # Skip non-sudoku content (video games, Wordle, crosswords, etc.)
+            if not is_puzzle_video(title, desc):
+                print(f"    Skipping non-puzzle video: {title!r}")
+                continue
+
             puzzle_url = extract_puzzle_url(desc)
 
             _ensure_sudokupad_cached(cache, youtube_id, puzzle_url)
 
-            setter_name = extract_setter(title, desc)
+            # Prefer the setter name from SudokuPad metadata (most reliable),
+            # falling back to description-based extraction.
+            sudokupad_author = (cache.get(youtube_id) or {}).get("sudokupad_author", "")
+            setter_name = sudokupad_author.strip() or extract_setter(title, desc)
             puzzle_start = extract_puzzle_start_seconds(desc)
             duration = entry.get("duration_seconds")
             solve_duration = (

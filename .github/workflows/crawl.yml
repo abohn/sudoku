@@ -1,0 +1,44 @@
+name: Crawl & Export
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      months:
+        description: "How many months of history to fetch (leave blank for 2)"
+        required: false
+        default: "2"
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run crawler
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          CTC_CHANNEL_ID: "@crackingthecryptic"
+        run: python -m app.crawler.run --months ${{ inputs.months || 2 }}
+
+      - name: Export static data
+        run: python scripts/export_static.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/sudoku.db frontend/public/data.json
+          git diff --staged --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "chore: update puzzle data $(date -u +%Y-%m-%d)"
+          git push

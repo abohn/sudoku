@@ -3,6 +3,9 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  // Set VITE_BASE_PATH=/repo-name/ when deploying to GitHub Pages.
+  // Defaults to "/" for local dev.
+  base: process.env.VITE_BASE_PATH ?? "/",
   server: {
     proxy: {
       "/api": {

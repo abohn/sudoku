@@ -344,11 +344,26 @@ RULE_DEFINITIONS: list[dict] = [
         # Negative lookbehind excludes "german whispers", "dutch whispers", "green whispers"
         "patterns": [r"(?<!german )(?<!dutch )(?<!green )\bwhispers?\b"],
     },
-    # ---- Rare / unique ----
+    # ---- Non-sudoku logic puzzles ----
+    # Catches pure non-sudoku pencil puzzles (Fillomino, Nurikabe, Star Battle, etc.)
+    # as well as sudoku hybrids that use these puzzle types as their primary constraint.
     {
-        "slug": "unique-rules",
-        "display_name": "Unique Rules",
-        "description": "Contains uncommon or one-of-a-kind constraints found in 3 or fewer puzzles.",
-        "patterns": [],
+        "slug": "non-sudoku",
+        "display_name": "Non-Sudoku Puzzle",
+        "description": "A logic/pencil puzzle that isn't standard sudoku — e.g. Star Battle, Nurikabe, Fillomino, Slitherlink, Pentominoes.",
+        "patterns": [
+            r"\bpentomino\b",
+            r"\bnurikabe\b",
+            r"\bnonogram\b",
+            r"\bstar battle\b",
+            r"\bslitherlink\b",
+            r"\bmasyu\b",
+            r"\bfillomino\b",
+            r"\bsuguru\b",
+            r"\btapa\b",
+            r"\bhitori\b",
+            r"\bspiral galaxi",  # "spiral galaxy" / "spiral galaxies"
+            r"\bkakuro\b",
+        ],
     },
 ]

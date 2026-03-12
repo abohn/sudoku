@@ -1,3 +1,7 @@
+/**
+ * Data layer — loads a pre-exported data.json and implements all
+ * filtering/sorting/pagination client-side so the app runs without a backend.
+ */
 import type {
   DifficultyLabel,
   MatchMode,
@@ -6,22 +10,46 @@ import type {
   Setter,
   SortOption,
   SortOrder,
+  VideoSummary,
 } from "./types";
 
-const BASE = "/api";
-
-export async function fetchRules(): Promise<Rule[]> {
-  const res = await fetch(`${BASE}/rules/`);
-  if (!res.ok) throw new Error("Failed to fetch rules");
-  return res.json();
+interface StaticData {
+  generated_at: string;
+  videos: VideoSummary[];
+  rules: Rule[];
+  setters: Setter[];
 }
 
-export async function fetchSetters(q?: string): Promise<Setter[]> {
-  const p = new URLSearchParams({ min_count: "2" });
-  if (q) p.set("q", q);
-  const res = await fetch(`${BASE}/setters/?${p.toString()}`);
-  if (!res.ok) throw new Error("Failed to fetch setters");
-  return res.json();
+// difficulty label → [min_inclusive, max_exclusive] (null = unbounded)
+const DIFFICULTY_RANGES: Record<DifficultyLabel, [number | null, number | null]> = {
+  easy: [null, 3.0],
+  medium: [3.0, 5.5],
+  hard: [5.5, 7.5],
+  brutal: [7.5, null],
+};
+
+// Singleton — load data.json once for the lifetime of the page.
+let _promise: Promise<StaticData> | null = null;
+
+function loadData(): Promise<StaticData> {
+  if (!_promise) {
+    // import.meta.env.BASE_URL is "/" locally and "/repo-name/" on GitHub Pages.
+    _promise = fetch(`${import.meta.env.BASE_URL}data.json`).then((r) => {
+      if (!r.ok) throw new Error(`Failed to load data.json (${r.status})`);
+      return r.json() as Promise<StaticData>;
+    });
+  }
+  return _promise;
+}
+
+export async function fetchRules(): Promise<Rule[]> {
+  const { rules } = await loadData();
+  return rules;
+}
+
+export async function fetchSetters(): Promise<Setter[]> {
+  const { setters } = await loadData();
+  return setters;
 }
 
 export async function fetchPuzzles(params: {
@@ -35,18 +63,90 @@ export async function fetchPuzzles(params: {
   page?: number;
   per_page?: number;
 }): Promise<PaginatedVideos> {
-  const p = new URLSearchParams();
-  if (params.rules?.length) p.set("rules", params.rules.join(","));
-  if (params.match) p.set("match", params.match);
-  if (params.sort) p.set("sort", params.sort);
-  if (params.order) p.set("order", params.order);
-  if (params.has_puzzle_url !== undefined) p.set("has_puzzle_url", String(params.has_puzzle_url));
-  if (params.setter) p.set("setter", params.setter);
-  if (params.difficulties?.length) p.set("difficulties", params.difficulties.join(","));
-  if (params.page) p.set("page", String(params.page));
-  if (params.per_page) p.set("per_page", String(params.per_page));
+  const {
+    rules = [],
+    match = "all",
+    sort = "published",
+    order = "desc",
+    has_puzzle_url,
+    setter,
+    difficulties = [],
+    page = 1,
+    per_page = 24,
+  } = params;
 
-  const res = await fetch(`${BASE}/puzzles/?${p.toString()}`);
-  if (!res.ok) throw new Error("Failed to fetch puzzles");
-  return res.json();
+  const { videos } = await loadData();
+  let items = videos;
+
+  // Rule filter
+  if (rules.length > 0) {
+    items = items.filter((v) => {
+      const slugs = new Set(v.rules.map((vr) => vr.rule.slug));
+      return match === "all" ? rules.every((s) => slugs.has(s)) : rules.some((s) => slugs.has(s));
+    });
+  }
+
+  // Puzzle URL filter
+  if (has_puzzle_url === true) {
+    items = items.filter((v) => v.puzzle_url != null);
+  } else if (has_puzzle_url === false) {
+    items = items.filter((v) => v.puzzle_url == null);
+  }
+
+  // Setter filter
+  if (setter) {
+    items = items.filter((v) => v.setter_name === setter);
+  }
+
+  // Difficulty filter
+  if (difficulties.length > 0) {
+    items = items.filter((v) => {
+      if (v.difficulty_score == null) return false;
+      const score = v.difficulty_score;
+      return difficulties.some((label) => {
+        const [lo, hi] = DIFFICULTY_RANGES[label];
+        if (lo != null && score < lo) return false;
+        if (hi != null && score >= hi) return false;
+        return true;
+      });
+    });
+  }
+
+  // Sort (stable — spread to avoid mutating the cached array)
+  items = [...items].sort((a, b) => {
+    let av: number | string | null;
+    let bv: number | string | null;
+    if (sort === "views") {
+      av = a.view_count;
+      bv = b.view_count;
+    } else if (sort === "solve_time") {
+      av = a.solve_duration_seconds;
+      bv = b.solve_duration_seconds;
+    } else if (sort === "difficulty") {
+      av = a.difficulty_score;
+      bv = b.difficulty_score;
+    } else {
+      av = a.published_at;
+      bv = b.published_at;
+    }
+
+    if (av == null && bv == null) return 0;
+    if (av == null) return order === "desc" ? 1 : -1;
+    if (bv == null) return order === "desc" ? -1 : 1;
+    if (av < bv) return order === "desc" ? 1 : -1;
+    if (av > bv) return order === "desc" ? -1 : 1;
+    return 0;
+  });
+
+  const total = items.length;
+  const pages = Math.max(1, Math.ceil(total / per_page));
+  const offset = (page - 1) * per_page;
+
+  return {
+    items: items.slice(offset, offset + per_page),
+    total,
+    page,
+    per_page,
+    pages,
+  };
 }

@@ -34,6 +34,40 @@ def _extract_puzzle_id(url: str) -> str | None:
     return m.group(1) if m else None
 
 
+# Matches {v:'...'} entries in the old JS-object-notation format.
+# The value may contain escaped single quotes (\').
+_CA_FIELD_RE = re.compile(r"""\{v:'((?:[^'\\]|\\.)*)'\}""")
+
+
+def _parse_old_format(text: str) -> dict | None:
+    """Parse the old SudokuPad JS-object-notation format.
+
+    Old puzzles look like:
+        {id:'sxsm_Author_...', ca:[{v:'author: Name'}, {v:'rules: ...'}, ...]}
+
+    We extract the ca entries and build a dict matching the new metadata format.
+    """
+    fields: dict[str, str] = {}
+    for m in _CA_FIELD_RE.finditer(text):
+        v = m.group(1).replace("\\'", "'")
+        colon = v.find(": ")
+        if colon > 0:
+            key = v[:colon].strip().lower()
+            val = v[colon + 2 :]
+            fields[key] = val
+
+    if not fields:
+        return None
+
+    return {
+        "metadata": {
+            "author": fields.get("author", ""),
+            "title": fields.get("title", ""),
+            "rules": fields.get("rules", ""),
+        }
+    }
+
+
 def fetch_puzzle_data(puzzle_url: str) -> dict | None:
     """Fetch and decode SudokuPad puzzle JSON. Returns None on any failure."""
     puzzle_id = _extract_puzzle_id(puzzle_url)
@@ -55,7 +89,12 @@ def fetch_puzzle_data(puzzle_url: str) -> dict | None:
         decompressed = _lz.decompressFromBase64(raw)
         if not decompressed:
             return None
-        return json.loads(decompressed)
+        try:
+            return json.loads(decompressed)
+        except json.JSONDecodeError:
+            # Older puzzles use JavaScript object notation (unquoted keys,
+            # single-quoted strings) instead of JSON.
+            return _parse_old_format(decompressed)
     except Exception:
         return None
 

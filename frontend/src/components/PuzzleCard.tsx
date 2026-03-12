@@ -30,9 +30,23 @@ interface Props {
   video: VideoSummary;
   selectedRules: string[];
   onRuleClick: (slug: string) => void;
+  isFavorite: boolean;
+  isCompleted: boolean;
+  completedAt: string | undefined;
+  onToggleFavorite: () => void;
+  onToggleCompleted: () => void;
 }
 
-export default function PuzzleCard({ video, selectedRules, onRuleClick }: Props) {
+export default function PuzzleCard({
+  video,
+  selectedRules,
+  onRuleClick,
+  isFavorite,
+  isCompleted,
+  completedAt,
+  onToggleFavorite,
+  onToggleCompleted,
+}: Props) {
   const diff = difficultyLabel(video.difficulty_score);
   const ytUrl = `https://www.youtube.com/watch?v=${video.youtube_id}`;
   const ytSolveUrl = video.puzzle_start_seconds
@@ -43,16 +57,27 @@ export default function PuzzleCard({ video, selectedRules, onRuleClick }: Props)
     month: "short",
     day: "numeric",
   });
+  const completedDate = completedAt
+    ? new Date(completedAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : null;
 
   return (
-    <article className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+    <article
+      className={`bg-white rounded-xl border overflow-hidden hover:shadow-md transition-shadow flex flex-col ${
+        isCompleted ? "border-gray-100 opacity-60" : "border-gray-200"
+      }`}
+    >
       {/* Thumbnail */}
       <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="relative block">
         {video.thumbnail_url ? (
           <img
             src={video.thumbnail_url}
             alt={video.title}
-            className="w-full aspect-video object-cover"
+            className={`w-full aspect-video object-cover ${isCompleted ? "grayscale" : ""}`}
             loading="lazy"
           />
         ) : (
@@ -65,6 +90,17 @@ export default function PuzzleCard({ video, selectedRules, onRuleClick }: Props)
             Has puzzle
           </span>
         )}
+        {/* Favorite button */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            onToggleFavorite();
+          }}
+          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 transition-colors text-base leading-none"
+        >
+          {isFavorite ? "★" : "☆"}
+        </button>
       </a>
 
       <div className="p-3 flex flex-col gap-2 flex-1">
@@ -90,12 +126,17 @@ export default function PuzzleCard({ video, selectedRules, onRuleClick }: Props)
           )}
         </div>
 
-        {/* Difficulty badge */}
-        {diff.label && (
-          <span className={`self-start text-xs font-medium px-2 py-0.5 rounded-full ${diff.cls}`}>
-            {diff.label}
-          </span>
-        )}
+        {/* Difficulty badge + completed badge */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {diff.label && (
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${diff.cls}`}>
+              {diff.label}
+            </span>
+          )}
+          {isCompleted && completedDate && (
+            <span className="text-xs text-gray-400">Done {completedDate}</span>
+          )}
+        </div>
 
         {/* Rules */}
         {video.rules.length > 0 && (
@@ -111,7 +152,7 @@ export default function PuzzleCard({ video, selectedRules, onRuleClick }: Props)
           </div>
         )}
 
-        {/* Links */}
+        {/* Links + complete button */}
         <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
           <a
             href={ytUrl}
@@ -128,9 +169,20 @@ export default function PuzzleCard({ video, selectedRules, onRuleClick }: Props)
               rel="noopener noreferrer"
               className="flex-1 text-center text-xs py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium transition-colors"
             >
-              Solve on YouTube
+              Solve
             </a>
           )}
+          <button
+            onClick={onToggleCompleted}
+            title={isCompleted ? "Mark as not completed" : "Mark as completed"}
+            className={`px-2.5 text-xs py-1.5 rounded-lg font-medium transition-colors ${
+              isCompleted
+                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            }`}
+          >
+            {isCompleted ? "✓ Completed" : "Completed"}
+          </button>
         </div>
       </div>
     </article>
