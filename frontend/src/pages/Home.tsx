@@ -102,7 +102,15 @@ export default function Home() {
               Cracking the Cryptic — searchable by rule type
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-2 flex-wrap">
+          <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSd8dru84uSsy8eMWLn2Jz44mhbOxp6cn3lAVyO1f_kq4kwrrA/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
+          >
+            Feedback
+          </a>
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Mobile filter toggle */}
             <button
               onClick={() => setShowFilters((v) => !v)}
