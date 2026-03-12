@@ -18,6 +18,7 @@ from datetime import UTC, datetime
 # Make app importable from repo root
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
@@ -34,6 +35,9 @@ _DEFAULT_OUTPUT = os.path.join(
 def export(output_path: str) -> None:
     db = next(get_db())
 
+    counts = dict(
+        db.query(VideoRule.rule_id, func.count(VideoRule.id)).group_by(VideoRule.rule_id).all()
+    )
     rules = db.query(Rule).order_by(Rule.display_name).all()
     rules_data = [
         {
@@ -42,7 +46,7 @@ def export(output_path: str) -> None:
             "display_name": r.display_name,
             "description": r.description,
             "is_rare": r.is_rare,
-            "video_count": r.video_count,
+            "video_count": counts.get(r.id, 0),
         }
         for r in rules
     ]
@@ -82,7 +86,7 @@ def export(output_path: str) -> None:
                             "display_name": vr.rule.display_name,
                             "description": vr.rule.description,
                             "is_rare": vr.rule.is_rare,
-                            "video_count": vr.rule.video_count,
+                            "video_count": counts.get(vr.rule.id, 0),
                         },
                         "confidence": vr.confidence,
                         "matched_text": vr.matched_text,
