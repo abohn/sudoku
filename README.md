@@ -1,149 +1,195 @@
 # CTC Puzzle Database
 
-A searchable database of Cracking the Cryptic sudoku puzzles, filterable by rule type.
+A searchable, filterable archive of [Cracking the Cryptic](https://www.youtube.com/@CrackingTheCryptic) logic puzzles — find the exact puzzle type you want to solve and jump straight to the video.
 
-## Quick start (local)
-
-### 1. Prerequisites
-
-- Python 3.12+
-- Node 20+
-- A YouTube Data API v3 key (see below)
-
-### 2. Environment
-
-```bash
-cp .env.example .env
-# Edit .env and paste your YOUTUBE_API_KEY
-```
-
-### 3. Backend
-
-```bash
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-
-uvicorn app.main:app --reload
-# API available at http://localhost:8000
-# Auto-docs at   http://localhost:8000/docs
-```
-
-### 4. Crawl some videos
-
-```bash
-# Activate the venv first, then:
-
-# Crawl the last 3 months (default)
-python -m app.crawler.run
-
-# Crawl the last 6 months
-python -m app.crawler.run --months 6
-
-# Crawl everything (3,000+ videos — use sparingly)
-python -m app.crawler.run --all
-
-# Quick test: only 20 videos
-python -m app.crawler.run --limit 20
-```
-
-### 5. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-# App available at http://localhost:5173
-```
+**Live site:** https://abohn.github.io/sudoku/
 
 ---
 
-## YouTube API key
+## Using the site
 
-1. Go to https://console.cloud.google.com
-2. Create a project
-3. **APIs & Services → Library** → search "YouTube Data API v3" → Enable
-4. **APIs & Services → Credentials → Create Credentials → API key**
-5. (Optional) Restrict the key to YouTube Data API v3
+### Browsing and filtering
 
-Free quota: **10,000 units/day**. Crawling 100 videos costs ~4 units.
+The sidebar lets you narrow down puzzles in multiple ways at once:
+
+- **Search** — type any part of a puzzle title or setter name to filter instantly.
+- **Watchlist only** — show only puzzles you've saved to your watchlist.
+- **Difficulty** — filter by Easy / Medium / Hard / Brutal. Difficulty is estimated from solve duration and title keywords (see *How difficulty works* below).
+- **Solve time** — filter by how long the solve takes: ≤30 min, 30–60 min, 60–90 min, or 90+ min. Handy when you only have a short window.
+- **Rules** — click one or more rule tags (Arrow, Thermo, Renban, etc.) to find puzzles with those constraints. When multiple rules are selected, toggle **All (AND)** / **Any (OR)** to control matching.
+- **Setter** — filter to puzzles by a specific puzzle constructor.
+
+Filters combine. For example: *Hard + Arrow + Killer + ≤60 min* gives you a very specific shortlist.
+
+Any active filter combination is reflected in the URL, so you can **bookmark or share** an exact filtered view.
+
+### Sorting
+
+Use the **Date / Most viewed / Solve time / Difficulty** dropdown in the header, with the **↑ / ↓** toggle for ascending or descending order.
+
+### Has puzzle link
+
+Check **Has puzzle link** to show only puzzles that have an associated SudokuPad link. This means you can open the grid yourself and solve along — or solve it independently before watching.
+
+### Watch vs. Solve
+
+Each puzzle card has two action buttons:
+
+- **Watch** — opens the YouTube video from the beginning.
+- **Solve** — opens the YouTube video starting at the moment the puzzle solve begins (skipping the rules explanation). Only shown when a puzzle link exists.
+
+> **Why no direct link to the puzzle grid?**
+> We deliberately route through YouTube rather than linking directly to the SudokuPad puzzle. Cracking the Cryptic is a small team that depends on YouTube views to sustain the channel. Watching the video — even for a few seconds — supports them. If you want to solve the puzzle blind, open the video, note the SudokuPad link in the description, and close the video before watching any of the solve.
+
+### Personal tracking
+
+All tracking is saved in your browser (localStorage) — no account needed, nothing is sent anywhere.
+
+| Button | What it does |
+|--------|-------------|
+| **★ / ☆** | Toggle a puzzle as a favorite |
+| **Save / Saved** | Add or remove from your watchlist ("want to solve later") |
+| **Completed / ✓ Completed** | Mark a puzzle as solved |
+
+Use **Hide completed** (top of the results area) to remove finished puzzles from view and focus on what's next.
+
+### Random puzzle
+
+Click **Random** in the header to pick a random puzzle from whatever filters are currently active. Great for when you want a surprise within a specific style (e.g. random Hard Thermo puzzle).
+
+### Stats
+
+Click **Stats** in the header to see a personal dashboard: total completed, average solve time, completions by month, difficulty distribution, and your most-solved rule types.
 
 ---
 
-## Scheduled crawling
+## How difficulty works
 
-To keep the database up to date, run the crawler periodically. Example cron (daily at 3 AM):
+Difficulty is an estimate (0–10 scale), displayed as:
 
-```cron
-0 3 * * * cd /path/to/sudoku && .venv/bin/python -m app.crawler.run --months 1
-```
+| Label | Score range |
+|-------|-------------|
+| Easy | 0 – 2.9 |
+| Medium | 3.0 – 5.4 |
+| Hard | 5.5 – 7.4 |
+| Brutal | 7.5 – 10 |
 
-Or use a GitHub Actions scheduled workflow if deploying to a server.
+**Primary signal:** solve duration (total video length minus the timestamp when the solve begins, parsed from YouTube chapter markers). Longer solves score higher.
 
----
+**Adjustment:** title keywords like "brutal", "nightmare", or "easy", "gentle" shift the score ±2 points.
 
-## Deployment (Docker)
-
-```bash
-cp .env.example .env
-# Fill in YOUTUBE_API_KEY in .env
-
-docker compose up --build -d
-# Frontend: http://your-server
-# Backend:  http://your-server/api
-```
-
-The `data/` directory containing the SQLite database is mounted as a volume and persists across container restarts.
-
----
-
-## Project structure
-
-```
-sudoku/
-  app/
-    main.py            FastAPI app + rule seed data
-    database.py        SQLAlchemy engine + session
-    models.py          ORM models (Video, Rule, VideoRule)
-    schemas.py         Pydantic response schemas
-    api/
-      puzzles.py       GET /api/puzzles  (search + filter)
-      rules.py         GET /api/rules    (all rules with counts)
-    crawler/
-      youtube.py       YouTube Data API v3 client
-      rule_parser.py   Rule detection + helper parsers
-      run.py           CLI entry point
-  frontend/
-    src/
-      api.ts           Fetch wrappers
-      types.ts         TypeScript interfaces
-      pages/Home.tsx   Main page
-      components/
-        RuleFilter.tsx  Sidebar filter panel
-        PuzzleCard.tsx  Puzzle grid card
-  Dockerfile           Backend image
-  docker-compose.yml   Full stack orchestration
-  requirements.txt
-```
+This is a heuristic, not a ground truth — treat it as a rough guide.
 
 ---
 
 ## How rule detection works
 
-Each video description is matched against a dictionary of ~30 canonical rules using regex patterns. For example:
+Each video description is matched against ~30 canonical rule definitions using regex patterns. Rules found in ≤ 3 videos are flagged **Rare** and grouped separately in the sidebar.
 
-| Rule | Triggers on |
-|------|-------------|
-| Arrow | `\barrow\b` |
+| Rule | Example triggers |
+|------|-----------------|
+| Arrow | `arrow sudoku` |
 | German Whispers | `german whispers`, `green line` |
 | Thermometer | `thermo`, `thermometer` |
 | Renban | `renban` |
-| Fog of War | `fog of war`, `fog` |
+| Fog of War | `fog of war` |
+| Killer | `killer sudoku`, `killer cages` |
 
-Rules found in ≤ 3 videos are flagged as **rare** and grouped separately in the filter sidebar. Patterns are evaluated in specificity order (e.g. "German Whispers" before the generic "Whispers" catch-all).
+Patterns are evaluated in specificity order so "German Whispers" is matched before the generic "Whispers" catch-all.
 
-## Difficulty scoring
+---
 
-- **Solve duration** (total video length minus chapter-parsed puzzle-start time) is the primary signal
-- **Title keywords** ("brutal", "easy", etc.) shift the score ±2 points
-- Score is 0–10 → displayed as Easy / Medium / Hard / Brutal
+## Developer docs
+
+### Prerequisites
+
+- Python 3.12+
+- Node 20+
+- A YouTube Data API v3 key
+
+### Setup
+
+```bash
+cp .env.example .env
+# Edit .env and add your YOUTUBE_API_KEY
+
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Crawl videos
+
+```bash
+python -m app.crawler.run              # last 3 months (default)
+python -m app.crawler.run --months 6
+python -m app.crawler.run --all        # full history (~3,000 videos)
+python -m app.crawler.run --limit 20   # quick smoke test
+```
+
+### Export static data and run the frontend
+
+```bash
+python scripts/export_static.py        # writes frontend/public/data.json
+
+cd frontend
+npm install
+npm run dev                            # http://localhost:5173
+```
+
+### Full rebuild from scratch
+
+```bash
+./scripts/rebuild.sh
+```
+
+Deletes the database, runs a full crawl, and exports the static data file.
+
+### GitHub Actions
+
+| Workflow | Trigger | What it does |
+|----------|---------|-------------|
+| `crawl.yml` | Weekly (Monday 06:00 UTC) or manual | Crawls new videos, exports `data.json`, commits |
+| `deploy.yml` | Push to `main` touching `frontend/` | Builds frontend, deploys to GitHub Pages |
+
+Add `YOUTUBE_API_KEY` as a repository secret. Enable GitHub Pages (Settings → Pages → Source: GitHub Actions) on first setup.
+
+### YouTube API key
+
+1. Go to https://console.cloud.google.com
+2. Create a project → **APIs & Services → Library** → "YouTube Data API v3" → Enable
+3. **Credentials → Create Credentials → API key**
+
+Free quota: **10,000 units/day**. Crawling 100 videos costs ~4 units.
+
+### Project structure
+
+```
+app/
+  crawler/
+    youtube.py       YouTube Data API v3 client
+    rule_parser.py   Rule detection, setter extraction, difficulty scoring
+    sudokupad.py     SudokuPad puzzle metadata fetcher
+    run.py           CLI entry point
+  api/
+    puzzles.py       GET /api/puzzles
+    rules.py         GET /api/rules
+  models.py          SQLAlchemy ORM models
+  rules_data.py      Rule definitions (single source of truth)
+frontend/
+  public/
+    data.json        Pre-exported static data (generated by export_static.py)
+  src/
+    api.ts           Client-side filtering/sorting/pagination
+    pages/
+      Home.tsx       Main browse page
+      Stats.tsx      Personal stats page
+    components/
+      PuzzleCard.tsx
+      RuleFilter.tsx
+    hooks/
+      useUserData.ts localStorage persistence (favorites, completed, watchlist)
+scripts/
+  export_static.py   DB → data.json exporter
+  rebuild.sh         Full rebuild script
+```
