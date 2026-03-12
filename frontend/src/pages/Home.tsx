@@ -283,6 +283,12 @@ export default function Home() {
             >
               Stats
             </Link>
+            <Link
+              to="/help"
+              className="text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
+            >
+              Help
+            </Link>
             <a
               href="https://docs.google.com/forms/d/e/1FAIpQLSd8dru84uSsy8eMWLn2Jz44mhbOxp6cn3lAVyO1f_kq4kwrrA/viewform"
               target="_blank"
