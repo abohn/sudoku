@@ -38,18 +38,22 @@ def export(output_path: str) -> None:
     counts = dict(
         db.query(VideoRule.rule_id, func.count(VideoRule.id)).group_by(VideoRule.rule_id).all()
     )
-    rules = db.query(Rule).order_by(Rule.display_name).all()
-    rules_data = [
-        {
-            "id": r.id,
-            "slug": r.slug,
-            "display_name": r.display_name,
-            "description": r.description,
-            "is_rare": r.is_rare,
-            "video_count": counts.get(r.id, 0),
-        }
-        for r in rules
-    ]
+    rules = db.query(Rule).all()
+    rules_data = sorted(
+        [
+            {
+                "id": r.id,
+                "slug": r.slug,
+                "display_name": r.display_name,
+                "description": r.description,
+                "is_rare": r.is_rare,
+                "video_count": counts.get(r.id, 0),
+            }
+            for r in rules
+        ],
+        key=lambda r: r["video_count"],
+        reverse=True,
+    )
 
     videos = (
         db.query(Video)
