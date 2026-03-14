@@ -101,7 +101,7 @@ export default function RuleFilter({
         <div className="bg-th-card rounded-xl border border-th-border p-3">
           <input
             type="search"
-            placeholder="Search title or setter…"
+            placeholder="Search title, setter, rule…"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full text-sm bg-th-card text-th-text1 border border-th-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"

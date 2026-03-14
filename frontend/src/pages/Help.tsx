@@ -50,14 +50,18 @@ export default function Help() {
 
         {/* Filters */}
         <Section title="Filtering and searching">
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-th-border">
             <Row label="Search">
-              Type any part of a puzzle title or setter name. Results update instantly.
+              Type any part of a puzzle title, setter name, solver name, or rule type. Results
+              update instantly.
             </Row>
-            <Row label="Rules">
+            <Row label="Sudoku Rules">
               Click one or more rule tags (Arrow, Thermo, Renban…) to filter. With multiple rules
               selected, toggle <strong>All (AND)</strong> to require every rule, or{" "}
               <strong>Any (OR)</strong> to match at least one.
+            </Row>
+            <Row label="Pencil Puzzles">
+              Filter to non-sudoku puzzle types — Nurikabe, Slitherlink, Star Battle, and more.
             </Row>
             <Row label="Difficulty">
               Easy / Medium / Hard / Brutal — estimated from solve duration and title keywords.
@@ -66,6 +70,10 @@ export default function Help() {
             <Row label="Solve time">
               Filter to puzzles that fit your available time: ≤30 min, 30–60 min, 60–90 min, or 90+
               min.
+            </Row>
+            <Row label="Solver">
+              Filter by who's solving — Simon, Mark, or others. Detected automatically from the
+              video title and description.
             </Row>
             <Row label="Has puzzle link">
               Show only videos that have an associated SudokuPad link so you can solve along (or
@@ -103,7 +111,7 @@ export default function Help() {
 
         {/* Watch vs Solve */}
         <Section title="Watch vs. Solve">
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-th-border">
             <Row label="Watch">Opens the YouTube video from the beginning.</Row>
             <Row label="Solve">
               Opens the YouTube video starting at the moment the solve begins — skipping the rules
@@ -124,7 +132,7 @@ export default function Help() {
           <p className="text-sm text-th-text2 mb-3">
             Everything is saved in your browser — no account needed, nothing is sent anywhere.
           </p>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-th-border">
             <Row label="★ Favorite">Mark puzzles you love or want to remember.</Row>
             <Row label="Save / Saved">
               Add to your watchlist — puzzles you want to solve later. Filter to just these with
@@ -179,13 +187,22 @@ export default function Help() {
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
                   {label}
                 </span>
-                <span className="text-gray-500">{range}</span>
+                <span className="text-th-text2">{range}</span>
               </div>
             ))}
           </div>
           <p className="text-sm text-th-text2">
             Primary signal: solve duration (video length minus puzzle-start timestamp from YouTube
             chapters). Title keywords like "brutal" or "easy" shift the score ±2 points.
+          </p>
+        </Section>
+
+        {/* Theme */}
+        <Section title="Themes">
+          <p className="text-sm text-th-text2 leading-relaxed">
+            Use the <strong>☀ / ☽ / ✦</strong> toggle in the top-right of the header to switch
+            between Light, Dark, and Warm (parchment) color schemes. Your preference is saved
+            automatically.
           </p>
         </Section>
 

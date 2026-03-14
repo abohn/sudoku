@@ -136,7 +136,10 @@ export async function fetchPuzzles(params: {
     const q = searchQuery.trim().toLowerCase();
     items = items.filter(
       (v) =>
-        v.title.toLowerCase().includes(q) || (v.setter_name?.toLowerCase().includes(q) ?? false)
+        v.title.toLowerCase().includes(q) ||
+        (v.setter_name?.toLowerCase().includes(q) ?? false) ||
+        (v.solver_name?.toLowerCase().includes(q) ?? false) ||
+        v.rules.some((vr) => vr.rule.display_name.toLowerCase().includes(q))
     );
   }
 

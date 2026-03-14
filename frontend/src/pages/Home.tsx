@@ -423,24 +423,28 @@ export default function Home() {
               <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
                 Puzzles by {results.granularity}
               </p>
-              <div className="flex items-end gap-px h-14">
-                {results.histogram.map(({ period, count }) => {
-                  const max = Math.max(...results.histogram.map((b) => b.count));
-                  const pct = Math.round((count / max) * 100);
-                  return (
-                    <div
-                      key={period}
-                      className="flex-1 flex flex-col items-center justify-end h-full"
-                      title={`${period}: ${count} puzzle${count !== 1 ? "s" : ""}`}
-                    >
-                      <div
-                        className="w-full bg-indigo-400 dark:bg-indigo-500 rounded-sm opacity-80 hover:opacity-100 transition-opacity"
-                        style={{ height: `${Math.max(pct, 4)}%` }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+              {(() => {
+                const histMax = Math.max(...results.histogram.map((b) => b.count));
+                return (
+                  <div className="flex items-end gap-px h-14">
+                    {results.histogram.map(({ period, count }) => {
+                      const pct = Math.round((count / histMax) * 100);
+                      return (
+                        <div
+                          key={period}
+                          className="flex-1 flex flex-col items-center justify-end h-full"
+                          title={`${period}: ${count} puzzle${count !== 1 ? "s" : ""}`}
+                        >
+                          <div
+                            className="w-full bg-indigo-400 dark:bg-indigo-500 rounded-sm opacity-80 hover:opacity-100 transition-opacity"
+                            style={{ height: `${Math.max(pct, 4)}%` }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
               <div className="flex justify-between mt-1">
                 <span className="text-[10px] text-th-text3">{results.histogram[0].period}</span>
                 <span className="text-[10px] text-th-text3">
