@@ -14,7 +14,7 @@ function applyTheme(t: Theme) {
 const ThemeContext = createContext<{
   theme: Theme;
   setTheme: (t: Theme) => void;
-}>({ theme: "light", setTheme: () => {} });
+}>({ theme: "dark", setTheme: () => {} });
 
 export function useTheme() {
   return useContext(ThemeContext);
@@ -23,7 +23,7 @@ export function useTheme() {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    return stored && THEMES.includes(stored) ? stored : "light";
+    return stored && THEMES.includes(stored) ? stored : "dark";
   });
 
   function setTheme(t: Theme) {
