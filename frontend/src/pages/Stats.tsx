@@ -19,6 +19,14 @@ function formatDuration(seconds: number): string {
   return `${m}m`;
 }
 
+const DIFF_ORDER = ["Easy", "Medium", "Hard", "Brutal"] as const;
+const DIFF_BAR_CLS: Record<string, string> = {
+  Easy: "bg-green-400",
+  Medium: "bg-yellow-400",
+  Hard: "bg-orange-400",
+  Brutal: "bg-red-400",
+};
+
 export default function Stats() {
   const { completed, favorites, watchlist } = useUserData();
   const [allVideos, setAllVideos] = useState<VideoSummary[]>([]);
@@ -30,21 +38,21 @@ export default function Stats() {
   }, []);
 
   const videoMap = new Map(allVideos.map((v) => [v.youtube_id, v]));
-  const completedVideos = Object.keys(completed)
-    .map((id) => videoMap.get(id))
-    .filter((v): v is VideoSummary => v !== undefined);
+  const completedEntries = Object.entries(completed)
+    .map(([id, rec]) => ({ video: videoMap.get(id), rec }))
+    .filter((e): e is { video: VideoSummary; rec: (typeof e)["rec"] } => e.video !== undefined);
 
   // Rule frequency among completed puzzles
   const ruleCounts = new Map<string, { name: string; count: number }>();
-  for (const v of completedVideos) {
-    for (const { rule } of v.rules) {
+  for (const { video } of completedEntries) {
+    for (const { rule } of video.rules) {
       const entry = ruleCounts.get(rule.slug) ?? { name: rule.display_name, count: 0 };
       ruleCounts.set(rule.slug, { ...entry, count: entry.count + 1 });
     }
   }
   const topRules = [...ruleCounts.values()].sort((a, b) => b.count - a.count).slice(0, 8);
 
-  // Difficulty distribution of completed puzzles
+  // Difficulty distribution
   const diffCounts: Record<string, number> = {
     Easy: 0,
     Medium: 0,
@@ -52,26 +60,53 @@ export default function Stats() {
     Brutal: 0,
     Unknown: 0,
   };
-  for (const v of completedVideos) {
-    diffCounts[difficultyLabel(v.difficulty_score)]++;
+  for (const { video } of completedEntries) {
+    diffCounts[difficultyLabel(video.difficulty_score)]++;
   }
 
-  // Average solve time of completed puzzles (that have solve duration)
-  const withTime = completedVideos.filter((v) => v.solve_duration_seconds != null);
-  const avgSeconds =
-    withTime.length > 0
-      ? withTime.reduce((sum, v) => sum + (v.solve_duration_seconds ?? 0), 0) / withTime.length
-      : null;
+  // Per-difficulty solve time comparison: user vs CTC solver
+  type DiffStats = { userMinutes: number[]; ctcSeconds: number[] };
+  const byDiff: Record<string, DiffStats> = {
+    Easy: { userMinutes: [], ctcSeconds: [] },
+    Medium: { userMinutes: [], ctcSeconds: [] },
+    Hard: { userMinutes: [], ctcSeconds: [] },
+    Brutal: { userMinutes: [], ctcSeconds: [] },
+  };
+  for (const { video, rec } of completedEntries) {
+    const label = difficultyLabel(video.difficulty_score);
+    if (!(label in byDiff)) continue;
+    if (rec.solveMinutes != null) byDiff[label].userMinutes.push(rec.solveMinutes);
+    if (video.solve_duration_seconds != null)
+      byDiff[label].ctcSeconds.push(video.solve_duration_seconds);
+  }
+
+  const avg = (nums: number[]) =>
+    nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+
+  const hasAnySolveTime = completedEntries.some((e) => e.rec.solveMinutes != null);
 
   // Completions by month (last 12 months)
   const byMonth: Record<string, number> = {};
-  for (const [id, ts] of Object.entries(completed)) {
-    if (!videoMap.has(id)) continue;
-    const month = ts.slice(0, 7); // "YYYY-MM"
+  for (const { rec } of completedEntries) {
+    const month = rec.completedAt.slice(0, 7);
     byMonth[month] = (byMonth[month] ?? 0) + 1;
   }
   const months = Object.keys(byMonth).sort().slice(-12);
   const maxMonthCount = Math.max(...Object.values(byMonth), 1);
+
+  // Average CTC solve time across all completed (for summary card)
+  const ctcWithTime = completedEntries.filter((e) => e.video.solve_duration_seconds != null);
+  const avgCtcSeconds =
+    ctcWithTime.length > 0
+      ? ctcWithTime.reduce((sum, e) => sum + (e.video.solve_duration_seconds ?? 0), 0) /
+        ctcWithTime.length
+      : null;
+
+  const userWithTime = completedEntries.filter((e) => e.rec.solveMinutes != null);
+  const avgUserMinutes =
+    userWithTime.length > 0
+      ? userWithTime.reduce((sum, e) => sum + (e.rec.solveMinutes ?? 0), 0) / userWithTime.length
+      : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -88,12 +123,12 @@ export default function Stats() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "Completed", value: completedVideos.length },
+            { label: "Completed", value: completedEntries.length },
             { label: "Favorites", value: favorites.size },
             { label: "Watchlist", value: watchlist.size },
             {
-              label: "Avg solve time",
-              value: avgSeconds != null ? formatDuration(avgSeconds) : "—",
+              label: "Avg CTC solve",
+              value: avgCtcSeconds != null ? formatDuration(avgCtcSeconds) : "—",
             },
           ].map(({ label, value }) => (
             <div key={label} className="bg-white rounded-xl border border-gray-200 p-4 text-center">
@@ -103,10 +138,10 @@ export default function Stats() {
           ))}
         </div>
 
-        {completedVideos.length === 0 ? (
+        {completedEntries.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <p className="text-lg mb-1">No completed puzzles yet</p>
-            <p className="text-sm">Mark puzzles as completed on the main page to see your stats.</p>
+            <p className="text-sm">Mark puzzles as done on the main page to see your stats.</p>
           </div>
         ) : (
           <>
@@ -139,23 +174,17 @@ export default function Stats() {
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <h2 className="font-semibold text-sm text-gray-900 mb-3">Difficulty distribution</h2>
               <div className="space-y-2">
-                {(["Easy", "Medium", "Hard", "Brutal"] as const).map((label) => {
+                {DIFF_ORDER.map((label) => {
                   const count = diffCounts[label] ?? 0;
-                  const pct = completedVideos.length
-                    ? Math.round((count / completedVideos.length) * 100)
+                  const pct = completedEntries.length
+                    ? Math.round((count / completedEntries.length) * 100)
                     : 0;
-                  const barCls = {
-                    Easy: "bg-green-400",
-                    Medium: "bg-yellow-400",
-                    Hard: "bg-orange-400",
-                    Brutal: "bg-red-400",
-                  }[label];
                   return (
                     <div key={label} className="flex items-center gap-2 text-sm">
                       <span className="w-14 text-gray-600 text-xs">{label}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-2">
                         <div
-                          className={`${barCls} h-2 rounded-full`}
+                          className={`${DIFF_BAR_CLS[label]} h-2 rounded-full`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -166,6 +195,86 @@ export default function Stats() {
               </div>
             </div>
 
+            {/* Solve time comparison */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <h2 className="font-semibold text-sm text-gray-900 mb-1">Solve time comparison</h2>
+              <p className="text-xs text-gray-400 mb-4">
+                Your time vs. CTC solver's time, averaged by difficulty.
+                {!hasAnySolveTime && (
+                  <span className="block mt-0.5 text-amber-600">
+                    Enter your solve time when marking puzzles done to see your stats here.
+                  </span>
+                )}
+              </p>
+              <div className="space-y-4">
+                {DIFF_ORDER.map((label) => {
+                  const { userMinutes, ctcSeconds } = byDiff[label];
+                  const userAvg = avg(userMinutes);
+                  const ctcAvg = avg(ctcSeconds);
+                  if (ctcAvg == null && userAvg == null) return null;
+
+                  const ctcMin = ctcAvg != null ? ctcAvg / 60 : null;
+                  const maxMin = Math.max(userAvg ?? 0, ctcMin ?? 0, 1);
+
+                  return (
+                    <div key={label}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span
+                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            {
+                              Easy: "bg-green-100 text-green-700",
+                              Medium: "bg-yellow-100 text-yellow-700",
+                              Hard: "bg-orange-100 text-orange-700",
+                              Brutal: "bg-red-100 text-red-700",
+                            }[label]
+                          }`}
+                        >
+                          {label}
+                        </span>
+                        <span className="text-xs text-gray-400">{diffCounts[label]} solved</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {ctcMin != null && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-gray-500 w-8">CTC</span>
+                            <div className="flex-1 bg-gray-100 rounded-full h-2">
+                              <div
+                                className="bg-slate-400 h-2 rounded-full"
+                                style={{ width: `${Math.round((ctcMin / maxMin) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-[11px] text-gray-500 w-10 text-right">
+                              {Math.round(ctcMin)}m
+                            </span>
+                          </div>
+                        )}
+                        {userAvg != null && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-gray-500 w-8">You</span>
+                            <div className="flex-1 bg-gray-100 rounded-full h-2">
+                              <div
+                                className="bg-blue-500 h-2 rounded-full"
+                                style={{ width: `${Math.round((userAvg / maxMin) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-[11px] text-gray-500 w-10 text-right">
+                              {Math.round(userAvg)}m
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {avgUserMinutes != null && avgCtcSeconds != null && (
+                <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex justify-between">
+                  <span>Your avg: {Math.round(avgUserMinutes)}m</span>
+                  <span>CTC avg: {Math.round(avgCtcSeconds / 60)}m</span>
+                </div>
+              )}
+            </div>
+
             {/* Top rules */}
             {topRules.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -174,7 +283,7 @@ export default function Stats() {
                 </h2>
                 <div className="space-y-2">
                   {topRules.map(({ name, count }) => {
-                    const pct = Math.round((count / completedVideos.length) * 100);
+                    const pct = Math.round((count / completedEntries.length) * 100);
                     return (
                       <div key={name} className="flex items-center gap-2 text-sm">
                         <span className="w-28 text-gray-600 text-xs truncate">{name}</span>

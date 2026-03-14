@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import type { VideoSummary } from "../types";
 import { RuleTag } from "./RuleFilter";
 
@@ -36,9 +37,11 @@ interface Props {
   isFavorite: boolean;
   isCompleted: boolean;
   completedAt: string | undefined;
+  solveMinutes: number | undefined;
   isWatchlisted: boolean;
   onToggleFavorite: () => void;
-  onToggleCompleted: () => void;
+  onMarkCompleted: (solveMinutes?: number) => void;
+  onUnmarkCompleted: () => void;
   onToggleWatchlist: () => void;
 }
 
@@ -49,9 +52,11 @@ export default function PuzzleCard({
   isFavorite,
   isCompleted,
   completedAt,
+  solveMinutes,
   isWatchlisted,
   onToggleFavorite,
-  onToggleCompleted,
+  onMarkCompleted,
+  onUnmarkCompleted,
   onToggleWatchlist,
 }: Props) {
   const diff = difficultyLabel(video.difficulty_score);
@@ -73,6 +78,23 @@ export default function PuzzleCard({
     : null;
 
   const isNew = NOW - new Date(video.published_at).getTime() < FOURTEEN_DAYS_MS;
+
+  // Inline completion modal state
+  const [showModal, setShowModal] = useState(false);
+  const [timeInput, setTimeInput] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function openModal() {
+    setTimeInput("");
+    setShowModal(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
+
+  function submitCompletion(skip?: boolean) {
+    const mins = !skip && timeInput.trim() ? parseInt(timeInput.trim(), 10) : undefined;
+    onMarkCompleted(mins && mins > 0 ? mins : undefined);
+    setShowModal(false);
+  }
 
   return (
     <article
@@ -145,7 +167,7 @@ export default function PuzzleCard({
           )}
         </div>
 
-        {/* Difficulty badge + completed badge */}
+        {/* Difficulty badge + completed info */}
         <div className="flex items-center gap-2 flex-wrap">
           {diff.label && (
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${diff.cls}`}>
@@ -153,7 +175,10 @@ export default function PuzzleCard({
             </span>
           )}
           {isCompleted && completedDate && (
-            <span className="text-xs text-gray-400">Done {completedDate}</span>
+            <span className="text-xs text-gray-400">
+              Done {completedDate}
+              {solveMinutes != null && ` · ${solveMinutes}m`}
+            </span>
           )}
         </div>
 
@@ -203,7 +228,7 @@ export default function PuzzleCard({
             {isWatchlisted ? "Saved" : "Save"}
           </button>
           <button
-            onClick={onToggleCompleted}
+            onClick={isCompleted ? onUnmarkCompleted : openModal}
             title={isCompleted ? "Mark as not completed" : "Mark as completed"}
             className={`px-2.5 text-xs py-1.5 rounded-lg font-medium transition-colors ${
               isCompleted
@@ -211,10 +236,57 @@ export default function PuzzleCard({
                 : "bg-gray-100 text-gray-500 hover:bg-gray-200"
             }`}
           >
-            {isCompleted ? "✓ Completed" : "Completed"}
+            {isCompleted ? "✓ Done" : "Done"}
           </button>
         </div>
       </div>
+
+      {/* Completion time modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-72 p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm font-semibold text-gray-900 mb-1">How long did it take you?</p>
+            <p className="text-xs text-gray-400 mb-3 leading-snug line-clamp-2">{video.title}</p>
+            <div className="flex items-center gap-2 mb-4">
+              <input
+                ref={inputRef}
+                type="number"
+                min="1"
+                max="999"
+                placeholder="minutes"
+                value={timeInput}
+                onChange={(e) => setTimeInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submitCompletion();
+                  if (e.key === "Escape") setShowModal(false);
+                }}
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <span className="text-sm text-gray-400">min</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => submitCompletion(true)}
+                className="flex-1 text-xs py-2 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 font-medium"
+              >
+                Skip
+              </button>
+              <button
+                onClick={() => submitCompletion()}
+                className="flex-1 text-xs py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 font-medium"
+              >
+                Mark done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

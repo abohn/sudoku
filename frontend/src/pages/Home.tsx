@@ -54,8 +54,15 @@ export default function Home() {
   // Random puzzle
   const [randomPick, setRandomPick] = useState<VideoSummary | null>(null);
 
-  const { favorites, completed, watchlist, toggleFavorite, toggleCompleted, toggleWatchlist } =
-    useUserData();
+  const {
+    favorites,
+    completed,
+    watchlist,
+    toggleFavorite,
+    markCompleted,
+    unmarkCompleted,
+    toggleWatchlist,
+  } = useUserData();
 
   function setParam(key: string, value: string | null) {
     setSearchParams(
@@ -392,10 +399,12 @@ export default function Home() {
                       onRuleClick={toggleRule}
                       isFavorite={favorites.has(video.youtube_id)}
                       isCompleted={!!completed[video.youtube_id]}
-                      completedAt={completed[video.youtube_id]}
+                      completedAt={completed[video.youtube_id]?.completedAt}
+                      solveMinutes={completed[video.youtube_id]?.solveMinutes}
                       isWatchlisted={watchlist.has(video.youtube_id)}
                       onToggleFavorite={() => toggleFavorite(video.youtube_id)}
-                      onToggleCompleted={() => toggleCompleted(video.youtube_id)}
+                      onMarkCompleted={(mins) => markCompleted(video.youtube_id, mins)}
+                      onUnmarkCompleted={() => unmarkCompleted(video.youtube_id)}
                       onToggleWatchlist={() => toggleWatchlist(video.youtube_id)}
                     />
                   ))}
