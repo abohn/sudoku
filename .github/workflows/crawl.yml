@@ -2,14 +2,14 @@ name: Crawl & Export
 
 on:
   schedule:
-    # Every Monday at 06:00 UTC
-    - cron: "0 6 * * 1"
+    # Every day at 06:00 UTC
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       months:
-        description: "How many months of history to fetch (leave blank for 2)"
+        description: "How many months of history to fetch (leave blank for 1)"
         required: false
-        default: "2"
+        default: "1"
 
 jobs:
   crawl:
@@ -39,7 +39,7 @@ jobs:
           CTC_CHANNEL_ID: "@crackingthecryptic"
         run: |
           mkdir -p data
-          python -m app.crawler.run --months ${{ inputs.months || 2 }}
+          python -m app.crawler.run --months ${{ inputs.months || 1 }}
 
       - name: Export static data
         run: python scripts/export_static.py
