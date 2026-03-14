@@ -167,6 +167,58 @@ def _normalize_name(name: str) -> str:
     return name
 
 
+# ---------------------------------------------------------------------------
+# Solver name extraction (which CTC host is solving)
+# ---------------------------------------------------------------------------
+
+# Ordered most-specific to least-specific.
+# We check for "Name solves/takes/has" first (explicit solver context),
+# then fall back to name appearing in the first 300 chars of the rules section.
+_SOLVER_EXPLICIT_RE = re.compile(
+    r"\b(simon|mark|sven|sam)\s+(?:solves?|takes?\s+on|is\s+solv)",
+    re.IGNORECASE,
+)
+_SOLVER_SIMPLE_RE = re.compile(
+    r"\b(simon(?:\s+anthony)?|mark(?:\s+goodliffe)?|sven|sam)\b",
+    re.IGNORECASE,
+)
+_SOLVER_DISPLAY: dict[str, str] = {
+    "simon": "Simon",
+    "mark": "Mark",
+    "sven": "Sven",
+    "sam": "Sam",
+}
+
+
+def extract_solver(title: str, description: str) -> str | None:
+    """Best-effort detection of which CTC host is solving the puzzle.
+
+    Checks for explicit "Name solves…" patterns first (high confidence),
+    then falls back to name appearance in the first 300 characters of the
+    puzzle-rules section.  Returns None when indeterminate.
+    """
+    desc_section = _puzzle_rules_section(description or "")
+
+    # High-confidence: explicit solver verb ("Simon solves this…")
+    for text in (title, desc_section[:500]):
+        m = _SOLVER_EXPLICIT_RE.search(text)
+        if m:
+            key = m.group(1).split()[0].lower()
+            return _SOLVER_DISPLAY.get(key)
+
+    # Lower-confidence: name appears in title or start of description.
+    # We skip occurrences immediately preceded by "by " (setter context).
+    for text in (title, desc_section[:300]):
+        for m in _SOLVER_SIMPLE_RE.finditer(text):
+            preceding = text[max(0, m.start() - 4) : m.start()].lower().strip()
+            if preceding.endswith("by"):
+                continue  # "by Simon" = setter, not solver
+            key = m.group(1).split()[0].lower()
+            return _SOLVER_DISPLAY.get(key)
+
+    return None
+
+
 def extract_setter(title: str, description: str) -> str | None:
     """Best-effort extraction of the puzzle setter's name.
 

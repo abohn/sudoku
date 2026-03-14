@@ -344,26 +344,128 @@ RULE_DEFINITIONS: list[dict] = [
         # Negative lookbehind excludes "german whispers", "dutch whispers", "green whispers"
         "patterns": [r"(?<!german )(?<!dutch )(?<!green )\bwhispers?\b"],
     },
-    # ---- Non-sudoku logic puzzles ----
-    # Catches pure non-sudoku pencil puzzles (Fillomino, Nurikabe, Star Battle, etc.)
-    # as well as sudoku hybrids that use these puzzle types as their primary constraint.
+    # ---- Non-sudoku / pencil puzzles ----
+    # Individual rules for common pencil puzzle types (ordered most-specific first).
+    # Each carries category="pencil" so the frontend can group them separately.
+    {
+        "slug": "star-battle",
+        "display_name": "Star Battle",
+        "description": "Place stars in regions so each row, column, and region has exactly the same number of stars, with no two stars touching.",
+        "category": "pencil",
+        "patterns": [r"\bstar battle\b", r"\bstar[- ]wars?\b(?!.*sudoku)"],
+    },
+    {
+        "slug": "nurikabe",
+        "display_name": "Nurikabe",
+        "description": "Shade cells to form rivers (connected black cells) while islands (white regions) match the given clue numbers.",
+        "category": "pencil",
+        "patterns": [r"\bnurikabe\b"],
+    },
+    {
+        "slug": "slitherlink",
+        "display_name": "Slitherlink",
+        "description": "Draw a single closed loop along grid edges so each numbered cell has that many loop segments around it.",
+        "category": "pencil",
+        "patterns": [r"\bslitherlink\b", r"\bfences\b(?!.*sudoku)"],
+    },
+    {
+        "slug": "fillomino",
+        "display_name": "Fillomino",
+        "description": "Divide the grid into polyominoes where each cell's number equals the size of its polyomino.",
+        "category": "pencil",
+        "patterns": [r"\bfillomino\b"],
+    },
+    {
+        "slug": "pentomino",
+        "display_name": "Pentominoes",
+        "description": "Logic puzzle involving the 12 distinct shapes made of 5 connected squares.",
+        "category": "pencil",
+        "patterns": [r"\bpentomino\b"],
+    },
+    {
+        "slug": "nonogram",
+        "display_name": "Nonogram",
+        "description": "Fill cells to reveal a picture using row/column clues indicating run lengths.",
+        "category": "pencil",
+        "patterns": [r"\bnonogram\b", r"\bpicross\b", r"\bpaint by numbers\b"],
+    },
+    {
+        "slug": "masyu",
+        "display_name": "Masyu",
+        "description": "Draw a loop that passes through all circles: straight through white circles (turning before/after), turning at black circles (straight before and after).",
+        "category": "pencil",
+        "patterns": [r"\bmasyu\b", r"\bmashu\b"],
+    },
+    {
+        "slug": "suguru",
+        "display_name": "Suguru",
+        "description": "Fill each region with digits 1–N (where N is the region size); no two touching cells may share a digit.",
+        "category": "pencil",
+        "patterns": [r"\bsuguru\b"],
+    },
+    {
+        "slug": "tapa",
+        "display_name": "Tapa",
+        "description": "Shade cells to form a single connected wall; clues indicate the lengths of shaded runs in the surrounding 8 cells.",
+        "category": "pencil",
+        "patterns": [r"\btapa\b"],
+    },
+    {
+        "slug": "hitori",
+        "display_name": "Hitori",
+        "description": "Black out cells so no digit repeats in any row or column, no two blacked-out cells touch, and all remaining cells are connected.",
+        "category": "pencil",
+        "patterns": [r"\bhitori\b"],
+    },
+    {
+        "slug": "spiral-galaxies",
+        "display_name": "Spiral Galaxies",
+        "description": "Divide the grid into 180°-rotationally-symmetric regions, each containing exactly one circle at its centre of symmetry.",
+        "category": "pencil",
+        "patterns": [r"\bspiral galaxi"],  # "spiral galaxy" / "spiral galaxies"
+    },
+    {
+        "slug": "kakuro",
+        "display_name": "Kakuro",
+        "description": "Fill the grid with digits 1–9 so each run sums to its clue with no repeated digits.",
+        "category": "pencil",
+        "patterns": [r"\bkakuro\b", r"\bcross sums\b"],
+    },
+    {
+        "slug": "loop-puzzle",
+        "display_name": "Loop Puzzle",
+        "description": "Draw a single closed loop through the grid satisfying given constraints.",
+        "category": "pencil",
+        "patterns": [
+            r"\bloop puzzle\b",
+            r"\bdraw a loop\b",
+            r"\bsingle (?:closed )?loop\b",
+            r"\byakeru\b",
+            r"\bnurikabe\b(?!.*nurikabe)",  # never reached; kept for future
+        ],
+    },
+    {
+        "slug": "minesweeper",
+        "display_name": "Minesweeper",
+        "description": "Locate hidden mines using numeric clues that indicate how many mines are adjacent to each revealed cell.",
+        "category": "pencil",
+        "patterns": [r"\bminesweeper\b"],
+    },
+    # Catch-all for other non-sudoku pencil puzzles not covered above.
     {
         "slug": "non-sudoku",
-        "display_name": "Non-Sudoku Puzzle",
-        "description": "A logic/pencil puzzle that isn't standard sudoku — e.g. Star Battle, Nurikabe, Fillomino, Slitherlink, Pentominoes.",
+        "display_name": "Other Pencil Puzzle",
+        "description": "A logic/pencil puzzle not covered by other rule types.",
+        "category": "pencil",
         "patterns": [
-            r"\bpentomino\b",
-            r"\bnurikabe\b",
-            r"\bnonogram\b",
-            r"\bstar battle\b",
-            r"\bslitherlink\b",
-            r"\bmasyu\b",
-            r"\bfillomino\b",
-            r"\bsuguru\b",
-            r"\btapa\b",
-            r"\bhitori\b",
-            r"\bspiral galaxi",  # "spiral galaxy" / "spiral galaxies"
-            r"\bkakuro\b",
+            r"\bhashiwokakero\b",
+            r"\bhashi\b",
+            r"\baquarium\b(?!.*sudoku)",
+            r"\bpicture logic\b",
+            r"\bnumbrix\b",
+            r"\bhidato\b",
+            r"\bkaleidoscope\b(?!.*sudoku)",
+            r"\bchocolate box\b",
         ],
     },
 ]

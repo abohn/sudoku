@@ -32,6 +32,7 @@ from app.crawler.rule_parser import (
     extract_puzzle_start_seconds,
     extract_puzzle_url,
     extract_setter,
+    extract_solver,
     is_puzzle_video,
     parse_rules,
 )
@@ -167,6 +168,7 @@ def _reprocess(cache: CrawlCache):
         video = db.query(Video).filter(Video.youtube_id == youtube_id).first()
         if not video:
             continue
+        video.solver_name = extract_solver(title, description)
         attach_rules(db, video, cache, youtube_id, description)
         if i % 100 == 0:
             db.commit()
@@ -179,6 +181,21 @@ def _reprocess(cache: CrawlCache):
     print(f"Reprocess complete. {len(entries)} video(s) updated.")
 
 
+def _run_migrations():
+    """Apply lightweight schema migrations for columns added after initial deploy."""
+    from sqlalchemy import text
+
+    with engine.connect() as conn:
+        for stmt in [
+            "ALTER TABLE videos ADD COLUMN solver_name VARCHAR(100)",
+        ]:
+            try:
+                conn.execute(text(stmt))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists
+
+
 def crawl(
     months_back: int = 3,
     crawl_all: bool = False,
@@ -187,6 +204,7 @@ def crawl(
 ):
     os.makedirs("data", exist_ok=True)
     Base.metadata.create_all(bind=engine)
+    _run_migrations()
 
     cache = CrawlCache()
 
@@ -257,6 +275,7 @@ def crawl(
             # falling back to description-based extraction.
             sudokupad_author = (cache.get(youtube_id) or {}).get("sudokupad_author", "")
             setter_name = sudokupad_author.strip() or extract_setter(title, desc)
+            solver_name = extract_solver(title, desc)
             puzzle_start = extract_puzzle_start_seconds(desc)
             duration = entry.get("duration_seconds")
             solve_duration = (
@@ -283,6 +302,7 @@ def crawl(
 
             video.puzzle_url = clean_str(puzzle_url)
             video.setter_name = clean_str(setter_name)
+            video.solver_name = solver_name
             video.puzzle_start_seconds = puzzle_start
             video.solve_duration_seconds = solve_duration
             video.difficulty_score = difficulty

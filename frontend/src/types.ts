@@ -5,6 +5,7 @@ export interface Rule {
   description: string | null;
   is_rare: boolean;
   video_count: number;
+  category: "sudoku" | "pencil";
 }
 
 export interface VideoRule {
@@ -22,6 +23,7 @@ export interface VideoSummary {
   thumbnail_url: string | null;
   puzzle_url: string | null;
   setter_name: string | null;
+  solver_name: string | null;
   puzzle_start_seconds: number | null;
   solve_duration_seconds: number | null;
   difficulty_score: number | null;
@@ -37,6 +39,11 @@ export interface PaginatedVideos {
 }
 
 export interface Setter {
+  name: string;
+  count: number;
+}
+
+export interface Solver {
   name: string;
   count: number;
 }

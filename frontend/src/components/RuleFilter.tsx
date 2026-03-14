@@ -1,4 +1,4 @@
-import type { DifficultyLabel, MatchMode, Rule, Setter } from "../types";
+import type { DifficultyLabel, MatchMode, Rule, Setter, Solver } from "../types";
 import SetterFilter from "./SetterFilter";
 
 const DIFFICULTIES: { label: DifficultyLabel; display: string; activeCls: string }[] = [
@@ -27,6 +27,9 @@ interface Props {
   setters: Setter[];
   selectedSetter: string | null;
   onSelectSetter: (name: string | null) => void;
+  solvers: Solver[];
+  selectedSolver: string | null;
+  onSelectSolver: (name: string | null) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   solveTime: string | undefined;
@@ -74,6 +77,9 @@ export default function RuleFilter({
   setters,
   selectedSetter,
   onSelectSetter,
+  solvers,
+  selectedSolver,
+  onSelectSolver,
   searchQuery,
   onSearchChange,
   solveTime,
@@ -81,8 +87,10 @@ export default function RuleFilter({
   watchlistOnly,
   onWatchlistOnlyChange,
 }: Props) {
-  const common = rules.filter((r) => !r.is_rare && r.slug !== "unique-rules");
-  const rare = rules.filter((r) => r.is_rare || r.slug === "unique-rules");
+  const sudokuRules = rules.filter((r) => r.category !== "pencil");
+  const pencilRules = rules.filter((r) => r.category === "pencil");
+  const commonSudoku = sudokuRules.filter((r) => !r.is_rare);
+  const rareSudoku = sudokuRules.filter((r) => r.is_rare);
 
   return (
     <aside className="w-full lg:w-64 shrink-0">
@@ -159,10 +167,42 @@ export default function RuleFilter({
           </div>
         </div>
 
-        {/* ---- Rules ---- */}
+        {/* ---- Solver ---- */}
+        {solvers.length > 0 && (
+          <div className="mb-4 border-t pt-3">
+            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">
+              Solver
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {solvers.map(({ name, count }) => {
+                const active = selectedSolver === name;
+                return (
+                  <button
+                    key={name}
+                    onClick={() => onSelectSolver(active ? null : name)}
+                    className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                      active
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {name}
+                    <span
+                      className={`ml-1 text-[10px] ${active ? "text-indigo-200" : "text-gray-400"}`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ---- Sudoku Rules ---- */}
         <div className="border-t pt-3">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-sm text-gray-900">Rules</h2>
+            <h2 className="font-semibold text-sm text-gray-900">Sudoku Rules</h2>
             {selected.length > 0 && (
               <button onClick={onClear} className="text-xs text-blue-600 hover:underline">
                 Clear ({selected.length})
@@ -194,7 +234,7 @@ export default function RuleFilter({
               Common
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {common.map((rule) => (
+              {commonSudoku.map((rule) => (
                 <RuleTag
                   key={rule.slug}
                   rule={rule}
@@ -205,13 +245,13 @@ export default function RuleFilter({
             </div>
           </div>
 
-          {rare.length > 0 && (
+          {rareSudoku.length > 0 && (
             <div className="space-y-1 border-t pt-3">
               <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-1">
                 Rare / Unique
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {rare.map((rule) => (
+                {rareSudoku.map((rule) => (
                   <RuleTag
                     key={rule.slug}
                     rule={rule}
@@ -223,6 +263,23 @@ export default function RuleFilter({
             </div>
           )}
         </div>
+
+        {/* ---- Pencil Puzzles ---- */}
+        {pencilRules.length > 0 && (
+          <div className="border-t pt-3 mt-3">
+            <h2 className="font-semibold text-sm text-gray-900 mb-3">Pencil Puzzles</h2>
+            <div className="flex flex-wrap gap-1.5">
+              {pencilRules.map((rule) => (
+                <RuleTag
+                  key={rule.slug}
+                  rule={rule}
+                  selected={selected.includes(rule.slug)}
+                  onClick={() => onToggle(rule.slug)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ---- Setter ---- */}
         <SetterFilter setters={setters} selected={selectedSetter} onSelect={onSelectSetter} />

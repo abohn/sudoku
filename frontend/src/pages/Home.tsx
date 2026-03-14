@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { fetchPuzzles, fetchRules, fetchSetters } from "../api";
+import { fetchPuzzles, fetchRules, fetchSetters, fetchSolvers } from "../api";
 import PuzzleCard from "../components/PuzzleCard";
 import RuleFilter from "../components/RuleFilter";
 import { useUserData } from "../hooks/useUserData";
@@ -10,6 +10,7 @@ import type {
   PaginatedVideos,
   Rule,
   Setter,
+  Solver,
   SortOption,
   SortOrder,
   VideoSummary,
@@ -39,8 +40,11 @@ export default function Home() {
   const watchlistOnly = searchParams.get("watchlist") === "1";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 
+  const selectedSolver = searchParams.get("solver") ?? null;
+
   const [rules, setRules] = useState<Rule[]>([]);
   const [setters, setSetters] = useState<Setter[]>([]);
+  const [solvers, setSolvers] = useState<Solver[]>([]);
   const [results, setResults] = useState<PaginatedVideos | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +75,7 @@ export default function Home() {
     selectedRules.length +
     selectedDifficulties.length +
     (selectedSetter ? 1 : 0) +
+    (selectedSolver ? 1 : 0) +
     (searchQuery ? 1 : 0) +
     (solveTime ? 1 : 0) +
     (watchlistOnly ? 1 : 0);
@@ -81,6 +86,9 @@ export default function Home() {
       .catch(() => setError("Failed to load rules"));
     fetchSetters()
       .then(setSetters)
+      .catch(() => {});
+    fetchSolvers()
+      .then(setSolvers)
       .catch(() => {});
   }, []);
 
@@ -96,6 +104,7 @@ export default function Home() {
           order,
           has_puzzle_url: hasPuzzleUrl,
           setter: selectedSetter ?? undefined,
+          solver: selectedSolver ?? undefined,
           difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
           searchQuery,
           solveTime,
@@ -128,6 +137,7 @@ export default function Home() {
         order,
         has_puzzle_url: hasPuzzleUrl,
         setter: selectedSetter ?? undefined,
+        solver: selectedSolver ?? undefined,
         difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
         searchQuery,
         solveTime,
@@ -316,6 +326,9 @@ export default function Home() {
             setters={setters}
             selectedSetter={selectedSetter}
             onSelectSetter={(name) => setParam("setter", name)}
+            solvers={solvers}
+            selectedSolver={selectedSolver}
+            onSelectSolver={(name) => setParam("solver", name)}
             searchQuery={searchQuery}
             onSearchChange={(q) => setParam("q", q || null)}
             solveTime={solveTime}

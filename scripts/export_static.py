@@ -23,6 +23,9 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import Rule, Video, VideoRule
+from app.rules_data import RULE_DEFINITIONS
+
+_RULE_CATEGORY = {d["slug"]: d.get("category", "sudoku") for d in RULE_DEFINITIONS}
 
 _DEFAULT_OUTPUT = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -48,6 +51,7 @@ def export(output_path: str) -> None:
                 "description": r.description,
                 "is_rare": r.is_rare,
                 "video_count": counts.get(r.id, 0),
+                "category": _RULE_CATEGORY.get(r.slug, "sudoku"),
             }
             for r in rules
         ],
@@ -63,11 +67,14 @@ def export(output_path: str) -> None:
     )
 
     setter_counts: dict[str, int] = {}
+    solver_counts: dict[str, int] = {}
     videos_data = []
 
     for v in videos:
         if v.setter_name:
             setter_counts[v.setter_name] = setter_counts.get(v.setter_name, 0) + 1
+        if v.solver_name:
+            solver_counts[v.solver_name] = solver_counts.get(v.solver_name, 0) + 1
 
         videos_data.append(
             {
@@ -79,6 +86,7 @@ def export(output_path: str) -> None:
                 "thumbnail_url": v.thumbnail_url,
                 "puzzle_url": v.puzzle_url,
                 "setter_name": v.setter_name,
+                "solver_name": v.solver_name,
                 "puzzle_start_seconds": v.puzzle_start_seconds,
                 "solve_duration_seconds": v.solve_duration_seconds,
                 "difficulty_score": v.difficulty_score,
@@ -91,6 +99,7 @@ def export(output_path: str) -> None:
                             "description": vr.rule.description,
                             "is_rare": vr.rule.is_rare,
                             "video_count": counts.get(vr.rule.id, 0),
+                            "category": _RULE_CATEGORY.get(vr.rule.slug, "sudoku"),
                         },
                         "confidence": vr.confidence,
                         "matched_text": vr.matched_text,
@@ -105,12 +114,17 @@ def export(output_path: str) -> None:
         for name, count in sorted(setter_counts.items(), key=lambda x: -x[1])
         if count >= 2
     ]
+    solvers = [
+        {"name": name, "count": count}
+        for name, count in sorted(solver_counts.items(), key=lambda x: -x[1])
+    ]
 
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
         "videos": videos_data,
         "rules": rules_data,
         "setters": setters,
+        "solvers": solvers,
     }
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

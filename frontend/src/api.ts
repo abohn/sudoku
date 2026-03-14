@@ -8,6 +8,7 @@ import type {
   PaginatedVideos,
   Rule,
   Setter,
+  Solver,
   SortOption,
   SortOrder,
   VideoSummary,
@@ -18,6 +19,7 @@ interface StaticData {
   videos: VideoSummary[];
   rules: Rule[];
   setters: Setter[];
+  solvers: Solver[];
 }
 
 const DIFFICULTY_RANGES: Record<DifficultyLabel, [number | null, number | null]> = {
@@ -49,6 +51,11 @@ export async function fetchSetters(): Promise<Setter[]> {
   return setters;
 }
 
+export async function fetchSolvers(): Promise<Solver[]> {
+  const data = await loadData();
+  return data.solvers ?? [];
+}
+
 export async function fetchAllVideos(): Promise<VideoSummary[]> {
   const { videos } = await loadData();
   return videos;
@@ -61,6 +68,7 @@ export async function fetchPuzzles(params: {
   order?: SortOrder;
   has_puzzle_url?: boolean;
   setter?: string;
+  solver?: string;
   difficulties?: DifficultyLabel[];
   searchQuery?: string;
   solveTime?: string;
@@ -76,6 +84,7 @@ export async function fetchPuzzles(params: {
     order = "desc",
     has_puzzle_url,
     setter,
+    solver,
     difficulties = [],
     searchQuery = "",
     solveTime,
@@ -103,6 +112,10 @@ export async function fetchPuzzles(params: {
 
   if (setter) {
     items = items.filter((v) => v.setter_name === setter);
+  }
+
+  if (solver) {
+    items = items.filter((v) => v.solver_name === solver);
   }
 
   if (difficulties.length > 0) {
