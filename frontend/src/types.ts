@@ -30,12 +30,19 @@ export interface VideoSummary {
   rules: VideoRule[];
 }
 
+export interface HistogramBucket {
+  period: string;
+  count: number;
+}
+
 export interface PaginatedVideos {
   items: VideoSummary[];
   total: number;
   page: number;
   per_page: number;
   pages: number;
+  histogram: HistogramBucket[];
+  granularity: "month" | "quarter" | "year";
 }
 
 export interface Setter {

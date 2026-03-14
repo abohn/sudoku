@@ -79,7 +79,6 @@ export default function PuzzleCard({
 
   const isNew = NOW - new Date(video.published_at).getTime() < FOURTEEN_DAYS_MS;
 
-  // Inline completion modal state
   const [showModal, setShowModal] = useState(false);
   const [timeInput, setTimeInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -97,28 +96,33 @@ export default function PuzzleCard({
   }
 
   return (
-    <article
-      className={`bg-white rounded-xl border overflow-hidden hover:shadow-md transition-shadow flex flex-col ${
-        isCompleted ? "border-gray-100 opacity-60" : "border-gray-200"
-      }`}
-    >
+    <article className="bg-th-card rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden border border-th-border">
       {/* Thumbnail */}
       <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="relative block">
         {video.thumbnail_url ? (
           <img
             src={video.thumbnail_url}
             alt={video.title}
-            className={`w-full aspect-video object-cover ${isCompleted ? "grayscale" : ""}`}
+            className="w-full aspect-video object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="w-full aspect-video bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+          <div className="w-full aspect-video bg-th-hover flex items-center justify-center text-th-text3 text-sm">
             No thumbnail
           </div>
         )}
 
+        {/* Completed overlay */}
+        {isCompleted && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+            <span className="bg-green-500 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold shadow-lg">
+              ✓
+            </span>
+          </div>
+        )}
+
         {/* New badge */}
-        {isNew && (
+        {isNew && !isCompleted && (
           <span className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
             NEW
           </span>
@@ -150,15 +154,15 @@ export default function PuzzleCard({
           href={ytUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm font-semibold text-gray-900 hover:text-blue-600 leading-snug line-clamp-2"
+          className="text-sm font-semibold text-th-text1 hover:text-blue-500 leading-snug line-clamp-2"
         >
           {video.title}
         </a>
 
         {/* Meta row */}
-        <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500">
+        <div className="flex items-center gap-2 flex-wrap text-xs text-th-text2">
           {video.setter_name && (
-            <span className="font-medium text-gray-700">{video.setter_name}</span>
+            <span className="font-medium text-th-text1">{video.setter_name}</span>
           )}
           <span>{publishedDate}</span>
           <span>{formatViews(video.view_count)} views</span>
@@ -175,7 +179,7 @@ export default function PuzzleCard({
             </span>
           )}
           {isCompleted && completedDate && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-th-text3">
               Done {completedDate}
               {solveMinutes != null && ` · ${solveMinutes}m`}
             </span>
@@ -197,12 +201,12 @@ export default function PuzzleCard({
         )}
 
         {/* Links + action buttons */}
-        <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
+        <div className="flex gap-2 mt-2 pt-2 border-t border-th-border">
           <a
             href={ytUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 text-center text-xs py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium transition-colors"
+            className="flex-1 text-center text-xs py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 font-medium transition-colors"
           >
             Watch
           </a>
@@ -211,7 +215,7 @@ export default function PuzzleCard({
               href={ytSolveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center text-xs py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium transition-colors"
+              className="flex-1 text-center text-xs py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 font-medium transition-colors"
             >
               Solve
             </a>
@@ -221,8 +225,8 @@ export default function PuzzleCard({
             title={isWatchlisted ? "Remove from watchlist" : "Save to watchlist"}
             className={`px-2.5 text-xs py-1.5 rounded-lg font-medium transition-colors ${
               isWatchlisted
-                ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                ? "bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50"
+                : "bg-th-hover text-th-text2 hover:bg-th-border"
             }`}
           >
             {isWatchlisted ? "Saved" : "Save"}
@@ -232,8 +236,8 @@ export default function PuzzleCard({
             title={isCompleted ? "Mark as not completed" : "Mark as completed"}
             className={`px-2.5 text-xs py-1.5 rounded-lg font-medium transition-colors ${
               isCompleted
-                ? "bg-green-100 text-green-700 hover:bg-green-200"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+                : "bg-th-hover text-th-text2 hover:bg-th-border"
             }`}
           >
             {isCompleted ? "✓ Done" : "Done"}
@@ -248,11 +252,11 @@ export default function PuzzleCard({
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-xl w-72 p-5"
+            className="bg-th-card rounded-2xl shadow-xl w-72 p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-sm font-semibold text-gray-900 mb-1">How long did it take you?</p>
-            <p className="text-xs text-gray-400 mb-3 leading-snug line-clamp-2">{video.title}</p>
+            <p className="text-sm font-semibold text-th-text1 mb-1">How long did it take you?</p>
+            <p className="text-xs text-th-text3 mb-3 leading-snug line-clamp-2">{video.title}</p>
             <div className="flex items-center gap-2 mb-4">
               <input
                 ref={inputRef}
@@ -266,14 +270,14 @@ export default function PuzzleCard({
                   if (e.key === "Enter") submitCompletion();
                   if (e.key === "Escape") setShowModal(false);
                 }}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="flex-1 bg-th-bg text-th-text1 border border-th-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
-              <span className="text-sm text-gray-400">min</span>
+              <span className="text-sm text-th-text3">min</span>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => submitCompletion(true)}
-                className="flex-1 text-xs py-2 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 font-medium"
+                className="flex-1 text-xs py-2 rounded-lg bg-th-hover text-th-text2 hover:bg-th-border font-medium"
               >
                 Skip
               </button>

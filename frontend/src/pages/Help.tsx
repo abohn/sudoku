@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="bg-white rounded-xl border border-gray-200 p-6">
-      <h2 className="text-base font-bold text-gray-900 mb-3">{title}</h2>
+    <section className="bg-th-card rounded-xl border border-th-border p-6">
+      <h2 className="text-base font-bold text-th-text1 mb-3">{title}</h2>
       {children}
     </section>
   );
@@ -11,29 +11,29 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex gap-3 py-2 border-b border-gray-100 last:border-0">
-      <span className="w-32 shrink-0 text-sm font-medium text-gray-700">{label}</span>
-      <span className="text-sm text-gray-600">{children}</span>
+    <div className="flex gap-3 py-2 border-b border-th-border last:border-0">
+      <span className="w-32 shrink-0 text-sm font-medium text-th-text1">{label}</span>
+      <span className="text-sm text-th-text2">{children}</span>
     </div>
   );
 }
 
 export default function Help() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-th-bg">
+      <header className="bg-th-card border-b border-th-border sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-4">
           <Link to="/" className="text-sm text-blue-600 hover:underline">
             ← Back
           </Link>
-          <h1 className="text-lg font-bold text-gray-900">How to use this site</h1>
+          <h1 className="text-lg font-bold text-th-text1">How to use this site</h1>
         </div>
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-5">
         {/* What is this */}
         <Section title="What is this?">
-          <p className="text-sm text-gray-600 leading-relaxed">
+          <p className="text-sm text-th-text2 leading-relaxed">
             A searchable archive of{" "}
             <a
               href="https://www.youtube.com/@CrackingTheCryptic"
@@ -81,8 +81,8 @@ export default function Help() {
 
         {/* Sort */}
         <Section title="Sorting">
-          <p className="text-sm text-gray-600 mb-2">Use the dropdown in the header to sort by:</p>
-          <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+          <p className="text-sm text-th-text2 mb-2">Use the dropdown in the header to sort by:</p>
+          <ul className="text-sm text-th-text2 space-y-1 list-disc list-inside">
             <li>
               <strong>Date</strong> — newest or oldest first
             </li>
@@ -96,7 +96,7 @@ export default function Help() {
               <strong>Difficulty</strong> — easiest or hardest first
             </li>
           </ul>
-          <p className="text-sm text-gray-600 mt-2">
+          <p className="text-sm text-th-text2 mt-2">
             The <strong>↑ / ↓</strong> button next to the dropdown flips the direction.
           </p>
         </Section>
@@ -121,7 +121,7 @@ export default function Help() {
 
         {/* Personal tracking */}
         <Section title="Personal tracking">
-          <p className="text-sm text-gray-600 mb-3">
+          <p className="text-sm text-th-text2 mb-3">
             Everything is saved in your browser — no account needed, nothing is sent anywhere.
           </p>
           <div className="divide-y divide-gray-100">
@@ -139,7 +139,7 @@ export default function Help() {
 
         {/* Random */}
         <Section title="Random puzzle">
-          <p className="text-sm text-gray-600 leading-relaxed">
+          <p className="text-sm text-th-text2 leading-relaxed">
             Click <strong>Random</strong> in the header to pick a random puzzle from whatever
             filters are currently active. Set filters first to get a surprise within a specific
             style — for example, a random Hard Thermo puzzle.
@@ -148,7 +148,7 @@ export default function Help() {
 
         {/* Sharing */}
         <Section title="Sharing a filtered view">
-          <p className="text-sm text-gray-600 leading-relaxed">
+          <p className="text-sm text-th-text2 leading-relaxed">
             Every combination of filters is reflected in the URL. Copy the address bar and share it
             — whoever opens the link will see exactly the same filtered results.
           </p>
@@ -156,7 +156,7 @@ export default function Help() {
 
         {/* Stats */}
         <Section title="Stats page">
-          <p className="text-sm text-gray-600 leading-relaxed">
+          <p className="text-sm text-th-text2 leading-relaxed">
             Click <strong>Stats</strong> in the header to see your personal dashboard: total puzzles
             completed, average solve time, completions by month, difficulty distribution, and the
             rule types you've solved most.
@@ -165,7 +165,7 @@ export default function Help() {
 
         {/* Difficulty */}
         <Section title="How difficulty is estimated">
-          <p className="text-sm text-gray-600 mb-3">
+          <p className="text-sm text-th-text2 mb-3">
             Difficulty is a 0–10 heuristic, not a ground truth — treat it as a rough guide.
           </p>
           <div className="grid grid-cols-2 gap-2 text-sm mb-3">
@@ -183,7 +183,7 @@ export default function Help() {
               </div>
             ))}
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-th-text2">
             Primary signal: solve duration (video length minus puzzle-start timestamp from YouTube
             chapters). Title keywords like "brutal" or "easy" shift the score ±2 points.
           </p>
@@ -191,7 +191,7 @@ export default function Help() {
 
         {/* Feedback */}
         <Section title="Feedback">
-          <p className="text-sm text-gray-600 leading-relaxed">
+          <p className="text-sm text-th-text2 leading-relaxed">
             Missing a puzzle? Wrong rule tag? Found a bug? Use the{" "}
             <a
               href="https://docs.google.com/forms/d/e/1FAIpQLSd8dru84uSsy8eMWLn2Jz44mhbOxp6cn3lAVyO1f_kq4kwrrA/viewform"

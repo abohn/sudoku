@@ -3,6 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { fetchPuzzles, fetchRules, fetchSetters, fetchSolvers } from "../api";
 import PuzzleCard from "../components/PuzzleCard";
 import RuleFilter from "../components/RuleFilter";
+import { useTheme } from "../context/ThemeContext";
+import type { Theme } from "../context/ThemeContext";
 import { useUserData } from "../hooks/useUserData";
 import type {
   DifficultyLabel,
@@ -50,6 +52,13 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
+
+  const { theme, setTheme } = useTheme();
+  const THEMES: { id: Theme; label: string }[] = [
+    { id: "light", label: "☀" },
+    { id: "dark", label: "☽" },
+    { id: "warm", label: "✦" },
+  ];
 
   // Random puzzle
   const [randomPick, setRandomPick] = useState<VideoSummary | null>(null);
@@ -176,7 +185,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-th-bg">
       {/* Random puzzle modal */}
       {randomPick && (
         <div
@@ -184,7 +193,7 @@ export default function Home() {
           onClick={() => setRandomPick(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden"
+            className="bg-th-card rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {randomPick.thumbnail_url && (
@@ -195,12 +204,12 @@ export default function Home() {
               />
             )}
             <div className="p-4">
-              <p className="text-xs text-gray-400 mb-1 uppercase tracking-wide font-medium">
+              <p className="text-xs text-th-text3 mb-1 uppercase tracking-wide font-medium">
                 Random pick
               </p>
-              <p className="font-semibold text-gray-900 leading-snug mb-1">{randomPick.title}</p>
+              <p className="font-semibold text-th-text1 leading-snug mb-1">{randomPick.title}</p>
               {randomPick.setter_name && (
-                <p className="text-sm text-gray-500 mb-3">by {randomPick.setter_name}</p>
+                <p className="text-sm text-th-text2 mb-3">by {randomPick.setter_name}</p>
               )}
               <div className="flex gap-2">
                 <a
@@ -238,20 +247,25 @@ export default function Home() {
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-th-card border-b border-th-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">CTC Puzzle Database</h1>
-            <p className="text-xs text-gray-500 hidden sm:block">
-              Cracking the Cryptic — searchable by rule type
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-8 rounded-full bg-indigo-500 hidden sm:block" />
+            <div>
+              <h1 className="text-lg font-bold text-th-text1 leading-tight">
+                Cracking the Cryptic
+              </h1>
+              <p className="text-xs text-th-text3 hidden sm:block leading-tight">
+                Puzzle Archive — search by rule type, difficulty, solver &amp; more
+              </p>
+            </div>
           </div>
 
           <div className="ml-auto flex items-center gap-2 flex-wrap">
             {/* Mobile filter toggle */}
             <button
               onClick={() => setShowFilters((v) => !v)}
-              className="lg:hidden text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 flex items-center gap-1.5"
+              className="lg:hidden text-sm border border-th-border rounded-lg px-2.5 py-1.5 bg-th-card hover:bg-th-hover text-th-text2 flex items-center gap-1.5"
             >
               Filters
               {activeFilterCount > 0 && (
@@ -263,7 +277,7 @@ export default function Home() {
             <select
               value={sort}
               onChange={(e) => setParam("sort", e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-2 py-1.5 bg-white"
+              className="text-sm border border-th-border rounded-lg px-2 py-1.5 bg-th-card text-th-text2"
             >
               <option value="published">Date</option>
               <option value="views">Most viewed</option>
@@ -272,12 +286,12 @@ export default function Home() {
             </select>
             <button
               onClick={() => setParam("order", order === "desc" ? "asc" : "desc")}
-              className="text-sm border border-gray-300 rounded-lg px-2 py-1.5 bg-white hover:bg-gray-50"
+              className="text-sm border border-th-border rounded-lg px-2 py-1.5 bg-th-card hover:bg-th-hover text-th-text2"
               title="Toggle sort order"
             >
               {order === "desc" ? "↓" : "↑"}
             </button>
-            <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
+            <label className="flex items-center gap-1.5 text-sm text-th-text2 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={hasPuzzleUrl === true}
@@ -289,20 +303,20 @@ export default function Home() {
             </label>
             <button
               onClick={pickRandom}
-              className="text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
+              className="text-sm border border-th-border rounded-lg px-2.5 py-1.5 bg-th-card hover:bg-th-hover text-th-text2"
               title="Pick a random puzzle from current filters"
             >
               Random
             </button>
             <Link
               to="/stats"
-              className="text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
+              className="text-sm border border-th-border rounded-lg px-2.5 py-1.5 bg-th-card hover:bg-th-hover text-th-text2"
             >
               Stats
             </Link>
             <Link
               to="/help"
-              className="text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
+              className="text-sm border border-th-border rounded-lg px-2.5 py-1.5 bg-th-card hover:bg-th-hover text-th-text2"
             >
               Help
             </Link>
@@ -310,10 +324,27 @@ export default function Home() {
               href="https://docs.google.com/forms/d/e/1FAIpQLSd8dru84uSsy8eMWLn2Jz44mhbOxp6cn3lAVyO1f_kq4kwrrA/viewform"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-600"
+              className="text-sm border border-th-border rounded-lg px-2.5 py-1.5 bg-th-card hover:bg-th-hover text-th-text2"
             >
               Feedback
             </a>
+            {/* Theme toggle */}
+            <div className="flex border border-th-border rounded-lg overflow-hidden">
+              {THEMES.map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setTheme(id)}
+                  title={id.charAt(0).toUpperCase() + id.slice(1)}
+                  className={`px-2.5 py-1.5 text-sm transition-colors ${
+                    theme === id
+                      ? "bg-indigo-600 text-white"
+                      : "bg-th-card text-th-text2 hover:bg-th-hover"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </header>
@@ -348,7 +379,7 @@ export default function Home() {
         {/* Main content */}
         <main className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-th-text2">
               {loading ? (
                 "Loading..."
               ) : results ? (
@@ -369,7 +400,7 @@ export default function Home() {
                 ""
               )}
             </p>
-            <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
+            <label className="flex items-center gap-1.5 text-sm text-th-text2 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={hideCompleted}
@@ -383,6 +414,39 @@ export default function Home() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-4">
               {error}
+            </div>
+          )}
+
+          {/* Frequency chart */}
+          {results && results.histogram.length > 1 && (
+            <div className="bg-th-card border border-th-border rounded-xl px-4 pt-3 pb-2 mb-4">
+              <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
+                Puzzles by {results.granularity}
+              </p>
+              <div className="flex items-end gap-px h-14">
+                {results.histogram.map(({ period, count }) => {
+                  const max = Math.max(...results.histogram.map((b) => b.count));
+                  const pct = Math.round((count / max) * 100);
+                  return (
+                    <div
+                      key={period}
+                      className="flex-1 flex flex-col items-center justify-end h-full"
+                      title={`${period}: ${count} puzzle${count !== 1 ? "s" : ""}`}
+                    >
+                      <div
+                        className="w-full bg-indigo-400 dark:bg-indigo-500 rounded-sm opacity-80 hover:opacity-100 transition-opacity"
+                        style={{ height: `${Math.max(pct, 4)}%` }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[10px] text-th-text3">{results.histogram[0].period}</span>
+                <span className="text-[10px] text-th-text3">
+                  {results.histogram[results.histogram.length - 1].period}
+                </span>
+              </div>
             </div>
           )}
 
@@ -415,17 +479,17 @@ export default function Home() {
                   <button
                     onClick={() => setParam("page", String(page - 1))}
                     disabled={page <= 1}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+                    className="px-3 py-1.5 text-sm border border-th-border text-th-text2 rounded-lg disabled:opacity-40 hover:bg-th-hover"
                   >
                     Previous
                   </button>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-th-text2">
                     Page {page} of {results.pages}
                   </span>
                   <button
                     onClick={() => setParam("page", String(page + 1))}
                     disabled={page >= results.pages}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+                    className="px-3 py-1.5 text-sm border border-th-border text-th-text2 rounded-lg disabled:opacity-40 hover:bg-th-hover"
                   >
                     Next
                   </button>
@@ -433,9 +497,20 @@ export default function Home() {
               )}
             </>
           ) : !loading ? (
-            <div className="text-center py-16 text-gray-400">
-              <p className="text-lg mb-1">No puzzles found</p>
-              <p className="text-sm">Try adjusting your filters.</p>
+            <div className="text-center py-16">
+              <p className="text-4xl mb-4">🔍</p>
+              <p className="text-base font-medium text-th-text1 mb-1">
+                No puzzles match these filters
+              </p>
+              <p className="text-sm text-th-text2 mb-4">
+                Try fewer rules, a broader difficulty, or
+              </p>
+              <button
+                onClick={pickRandom}
+                className="inline-block text-sm px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-medium transition-colors"
+              >
+                Pick a random puzzle
+              </button>
             </div>
           ) : null}
         </main>

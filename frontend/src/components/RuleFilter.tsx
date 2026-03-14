@@ -42,22 +42,24 @@ export function RuleTag({
   rule,
   selected,
   onClick,
+  activeClass = "bg-blue-600 text-white",
 }: {
   rule: Rule;
   selected: boolean;
   onClick?: () => void;
+  activeClass?: string;
 }) {
   return (
     <button
       onClick={onClick}
       title={rule.description ?? undefined}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors
-        ${selected ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}
+      className={`rule-tag inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors
+        ${selected ? activeClass : "bg-th-card text-th-text1 hover:bg-th-hover"}
         ${onClick ? "cursor-pointer" : "cursor-default"}`}
     >
       {rule.display_name}
       {rule.video_count > 0 && (
-        <span className={`text-[10px] ${selected ? "text-blue-200" : "text-gray-400"}`}>
+        <span className={`text-[10px] ${selected ? "opacity-70" : "text-th-text3"}`}>
           {rule.video_count}
         </span>
       )}
@@ -94,133 +96,150 @@ export default function RuleFilter({
 
   return (
     <aside className="w-full lg:w-64 shrink-0">
-      <div className="bg-white rounded-xl border border-gray-200 p-4 sticky top-4 overflow-y-auto max-h-[calc(100vh-6rem)]">
+      <div className="sticky top-4 overflow-y-auto max-h-[calc(100vh-6rem)] space-y-2">
         {/* ---- Search ---- */}
-        <div className="mb-4">
+        <div className="bg-th-card rounded-xl border border-th-border p-3">
           <input
             type="search"
             placeholder="Search title or setter…"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full text-sm bg-th-card text-th-text1 border border-th-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
-        </div>
-
-        {/* ---- Watchlist ---- */}
-        <div className="mb-4">
-          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+          <label className="flex items-center gap-2 text-sm text-th-text2 cursor-pointer select-none mt-2.5">
             <input
               type="checkbox"
               checked={watchlistOnly}
               onChange={(e) => onWatchlistOnlyChange(e.target.checked)}
-              className="rounded"
+              className="rounded accent-indigo-600"
             />
             <span>Watchlist only</span>
           </label>
         </div>
 
-        {/* ---- Difficulty ---- */}
-        <div className="mb-4 border-t pt-3">
-          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">
-            Difficulty
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {DIFFICULTIES.map(({ label, display, activeCls }) => {
-              const active = selectedDifficulties.includes(label);
-              return (
-                <button
-                  key={label}
-                  onClick={() => onToggleDifficulty(label)}
-                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                    active ? activeCls : "border-gray-300 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  {display}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ---- Solve time ---- */}
-        <div className="mb-4 border-t pt-3">
-          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">
-            Solve time
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {SOLVE_TIMES.map(({ value, display }) => {
-              const active = solveTime === value;
-              return (
-                <button
-                  key={value}
-                  onClick={() => onSolveTimeChange(active ? null : value)}
-                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                    active
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  {display}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ---- Solver ---- */}
-        {solvers.length > 0 && (
-          <div className="mb-4 border-t pt-3">
-            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">
-              Solver
+        {/* ---- Difficulty + Solve time + Solver ---- */}
+        <div className="bg-th-card rounded-xl border border-th-border p-3 space-y-3">
+          <div>
+            <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
+              Difficulty
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {solvers.map(({ name, count }) => {
-                const active = selectedSolver === name;
+              {DIFFICULTIES.map(({ label, display, activeCls }) => {
+                const active = selectedDifficulties.includes(label);
                 return (
                   <button
-                    key={name}
-                    onClick={() => onSelectSolver(active ? null : name)}
+                    key={label}
+                    onClick={() => onToggleDifficulty(label)}
                     className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                      active
-                        ? "bg-indigo-600 text-white border-indigo-600"
-                        : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                      active ? activeCls : "border-th-border text-th-text2 hover:bg-th-hover"
                     }`}
                   >
-                    {name}
-                    <span
-                      className={`ml-1 text-[10px] ${active ? "text-indigo-200" : "text-gray-400"}`}
-                    >
-                      {count}
-                    </span>
+                    {display}
                   </button>
                 );
               })}
             </div>
           </div>
+
+          <div className="border-t border-th-border pt-3">
+            <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
+              Solve time
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {SOLVE_TIMES.map(({ value, display }) => {
+                const active = solveTime === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => onSolveTimeChange(active ? null : value)}
+                    className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                      active
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "border-th-border text-th-text2 hover:bg-th-hover"
+                    }`}
+                  >
+                    {display}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {solvers.length > 0 && (
+            <div className="border-t border-th-border pt-3">
+              <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
+                Solver
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {solvers.map(({ name, count }) => {
+                  const active = selectedSolver === name;
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => onSelectSolver(active ? null : name)}
+                      className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                        active
+                          ? "bg-indigo-600 text-white border-indigo-600"
+                          : "border-th-border text-th-text2 hover:bg-th-hover"
+                      }`}
+                    >
+                      {name}
+                      <span
+                        className={`ml-1 text-[10px] ${active ? "text-indigo-200" : "text-th-text3"}`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ---- Pencil Puzzles ---- */}
+        {pencilRules.length > 0 && (
+          <div className="sidebar-pencil rounded-xl border p-3">
+            <h2 className="sidebar-pencil-header text-[11px] font-semibold uppercase tracking-wider mb-2">
+              Pencil Puzzles
+            </h2>
+            <div className="flex flex-wrap gap-1.5">
+              {pencilRules.map((rule) => (
+                <RuleTag
+                  key={rule.slug}
+                  rule={rule}
+                  selected={selected.includes(rule.slug)}
+                  onClick={() => onToggle(rule.slug)}
+                  activeClass="bg-amber-600 text-white"
+                />
+              ))}
+            </div>
+          </div>
         )}
 
         {/* ---- Sudoku Rules ---- */}
-        <div className="border-t pt-3">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-sm text-gray-900">Sudoku Rules</h2>
+        <div className="sidebar-sudoku rounded-xl border p-3">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="sidebar-sudoku-header text-[11px] font-semibold uppercase tracking-wider">
+              Sudoku Rules
+            </h2>
             {selected.length > 0 && (
-              <button onClick={onClear} className="text-xs text-blue-600 hover:underline">
+              <button onClick={onClear} className="sidebar-sudoku-clear text-xs hover:underline">
                 Clear ({selected.length})
               </button>
             )}
           </div>
 
           {selected.length > 1 && (
-            <div className="flex gap-2 mb-3">
-              <span className="text-xs text-gray-500 self-center">Match:</span>
+            <div className="flex gap-1.5 mb-3">
               {(["all", "any"] as MatchMode[]).map((m) => (
                 <button
                   key={m}
                   onClick={() => onMatchChange(m)}
                   className={`text-xs px-2 py-1 rounded border transition-colors ${
                     match === m
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "sidebar-sudoku-clear border-current hover:bg-th-hover"
                   }`}
                 >
                   {m === "all" ? "All (AND)" : "Any (OR)"}
@@ -229,8 +248,8 @@ export default function RuleFilter({
             </div>
           )}
 
-          <div className="space-y-1 mb-3">
-            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-1">
+          <div className="mb-3">
+            <p className="sidebar-sudoku-sublabel text-[10px] font-semibold uppercase tracking-wider mb-1.5">
               Common
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -246,8 +265,8 @@ export default function RuleFilter({
           </div>
 
           {rareSudoku.length > 0 && (
-            <div className="space-y-1 border-t pt-3">
-              <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-1">
+            <div className="sidebar-sudoku-divider border-t pt-3">
+              <p className="sidebar-sudoku-sublabel text-[10px] font-semibold uppercase tracking-wider mb-1.5">
                 Rare / Unique
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -263,23 +282,6 @@ export default function RuleFilter({
             </div>
           )}
         </div>
-
-        {/* ---- Pencil Puzzles ---- */}
-        {pencilRules.length > 0 && (
-          <div className="border-t pt-3 mt-3">
-            <h2 className="font-semibold text-sm text-gray-900 mb-3">Pencil Puzzles</h2>
-            <div className="flex flex-wrap gap-1.5">
-              {pencilRules.map((rule) => (
-                <RuleTag
-                  key={rule.slug}
-                  rule={rule}
-                  selected={selected.includes(rule.slug)}
-                  onClick={() => onToggle(rule.slug)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ---- Setter ---- */}
         <SetterFilter setters={setters} selected={selectedSetter} onSelect={onSelectSetter} />

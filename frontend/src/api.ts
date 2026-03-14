@@ -4,6 +4,7 @@
  */
 import type {
   DifficultyLabel,
+  HistogramBucket,
   MatchMode,
   PaginatedVideos,
   Rule,
@@ -184,11 +185,54 @@ export async function fetchPuzzles(params: {
   const pages = Math.max(1, Math.ceil(total / per_page));
   const offset = (page - 1) * per_page;
 
+  // Compute histogram from all filtered items (before pagination)
+  const { histogram, granularity } = buildHistogram(items);
+
   return {
     items: items.slice(offset, offset + per_page),
     total,
     page,
     per_page,
     pages,
+    histogram,
+    granularity,
   };
+}
+
+function buildHistogram(items: VideoSummary[]): {
+  histogram: HistogramBucket[];
+  granularity: "month" | "quarter" | "year";
+} {
+  if (items.length === 0) return { histogram: [], granularity: "month" };
+
+  // Determine date range in months
+  const dates = items.map((v) => new Date(v.published_at));
+  const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+  const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+  const rangeMonths =
+    (maxDate.getFullYear() - minDate.getFullYear()) * 12 +
+    (maxDate.getMonth() - minDate.getMonth());
+
+  const granularity: "month" | "quarter" | "year" =
+    rangeMonths <= 24 ? "month" : rangeMonths <= 72 ? "quarter" : "year";
+
+  const buckets = new Map<string, number>();
+  for (const v of items) {
+    const d = new Date(v.published_at);
+    let key: string;
+    if (granularity === "month") {
+      key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    } else if (granularity === "quarter") {
+      key = `${d.getFullYear()} Q${Math.ceil((d.getMonth() + 1) / 3)}`;
+    } else {
+      key = `${d.getFullYear()}`;
+    }
+    buckets.set(key, (buckets.get(key) ?? 0) + 1);
+  }
+
+  const histogram = [...buckets.entries()]
+    .map(([period, count]) => ({ period, count }))
+    .sort((a, b) => a.period.localeCompare(b.period));
+
+  return { histogram, granularity };
 }

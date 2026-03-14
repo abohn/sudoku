@@ -109,13 +109,13 @@ export default function Stats() {
       : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-th-bg">
+      <header className="bg-th-card border-b border-th-border sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-4">
           <Link to="/" className="text-sm text-blue-600 hover:underline">
             ← Back
           </Link>
-          <h1 className="text-lg font-bold text-gray-900">My Stats</h1>
+          <h1 className="text-lg font-bold text-th-text1">My Stats</h1>
         </div>
       </header>
 
@@ -131,15 +131,18 @@ export default function Stats() {
               value: avgCtcSeconds != null ? formatDuration(avgCtcSeconds) : "—",
             },
           ].map(({ label, value }) => (
-            <div key={label} className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-              <p className="text-2xl font-bold text-gray-900">{value}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+            <div
+              key={label}
+              className="bg-th-card rounded-xl border border-th-border p-4 text-center"
+            >
+              <p className="text-2xl font-bold text-th-text1">{value}</p>
+              <p className="text-xs text-th-text2 mt-0.5">{label}</p>
             </div>
           ))}
         </div>
 
         {completedEntries.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-16 text-th-text3">
             <p className="text-lg mb-1">No completed puzzles yet</p>
             <p className="text-sm">Mark puzzles as done on the main page to see your stats.</p>
           </div>
@@ -147,20 +150,20 @@ export default function Stats() {
           <>
             {/* Completions by month */}
             {months.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <h2 className="font-semibold text-sm text-gray-900 mb-4">Completions by month</h2>
+              <div className="bg-th-card rounded-xl border border-th-border p-4">
+                <h2 className="font-semibold text-sm text-th-text1 mb-4">Completions by month</h2>
                 <div className="flex items-end gap-1 h-24">
                   {months.map((m) => {
                     const count = byMonth[m] ?? 0;
                     const height = Math.round((count / maxMonthCount) * 100);
                     return (
                       <div key={m} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-[10px] text-gray-500">{count}</span>
+                        <span className="text-[10px] text-th-text2">{count}</span>
                         <div
                           className="w-full bg-blue-500 rounded-t"
                           style={{ height: `${height}%`, minHeight: count > 0 ? "4px" : "0" }}
                         />
-                        <span className="text-[9px] text-gray-400 rotate-45 origin-left whitespace-nowrap">
+                        <span className="text-[9px] text-th-text3 rotate-45 origin-left whitespace-nowrap">
                           {m.slice(5)}
                         </span>
                       </div>
@@ -171,8 +174,8 @@ export default function Stats() {
             )}
 
             {/* Difficulty distribution */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <h2 className="font-semibold text-sm text-gray-900 mb-3">Difficulty distribution</h2>
+            <div className="bg-th-card rounded-xl border border-th-border p-4">
+              <h2 className="font-semibold text-sm text-th-text1 mb-3">Difficulty distribution</h2>
               <div className="space-y-2">
                 {DIFF_ORDER.map((label) => {
                   const count = diffCounts[label] ?? 0;
@@ -181,14 +184,14 @@ export default function Stats() {
                     : 0;
                   return (
                     <div key={label} className="flex items-center gap-2 text-sm">
-                      <span className="w-14 text-gray-600 text-xs">{label}</span>
-                      <div className="flex-1 bg-gray-100 rounded-full h-2">
+                      <span className="w-14 text-th-text2 text-xs">{label}</span>
+                      <div className="flex-1 bg-th-hover rounded-full h-2">
                         <div
                           className={`${DIFF_BAR_CLS[label]} h-2 rounded-full`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-500 w-8 text-right">{count}</span>
+                      <span className="text-xs text-th-text2 w-8 text-right">{count}</span>
                     </div>
                   );
                 })}
@@ -196,9 +199,9 @@ export default function Stats() {
             </div>
 
             {/* Solve time comparison */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <h2 className="font-semibold text-sm text-gray-900 mb-1">Solve time comparison</h2>
-              <p className="text-xs text-gray-400 mb-4">
+            <div className="bg-th-card rounded-xl border border-th-border p-4">
+              <h2 className="font-semibold text-sm text-th-text1 mb-1">Solve time comparison</h2>
+              <p className="text-xs text-th-text3 mb-4">
                 Your time vs. CTC solver's time, averaged by difficulty.
                 {!hasAnySolveTime && (
                   <span className="block mt-0.5 text-amber-600">
@@ -231,33 +234,33 @@ export default function Stats() {
                         >
                           {label}
                         </span>
-                        <span className="text-xs text-gray-400">{diffCounts[label]} solved</span>
+                        <span className="text-xs text-th-text3">{diffCounts[label]} solved</span>
                       </div>
                       <div className="space-y-1.5">
                         {ctcMin != null && (
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] text-gray-500 w-8">CTC</span>
-                            <div className="flex-1 bg-gray-100 rounded-full h-2">
+                            <span className="text-[11px] text-th-text2 w-8">CTC</span>
+                            <div className="flex-1 bg-th-hover rounded-full h-2">
                               <div
                                 className="bg-slate-400 h-2 rounded-full"
                                 style={{ width: `${Math.round((ctcMin / maxMin) * 100)}%` }}
                               />
                             </div>
-                            <span className="text-[11px] text-gray-500 w-10 text-right">
+                            <span className="text-[11px] text-th-text2 w-10 text-right">
                               {Math.round(ctcMin)}m
                             </span>
                           </div>
                         )}
                         {userAvg != null && (
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] text-gray-500 w-8">You</span>
-                            <div className="flex-1 bg-gray-100 rounded-full h-2">
+                            <span className="text-[11px] text-th-text2 w-8">You</span>
+                            <div className="flex-1 bg-th-hover rounded-full h-2">
                               <div
                                 className="bg-blue-500 h-2 rounded-full"
                                 style={{ width: `${Math.round((userAvg / maxMin) * 100)}%` }}
                               />
                             </div>
-                            <span className="text-[11px] text-gray-500 w-10 text-right">
+                            <span className="text-[11px] text-th-text2 w-10 text-right">
                               {Math.round(userAvg)}m
                             </span>
                           </div>
@@ -268,7 +271,7 @@ export default function Stats() {
                 })}
               </div>
               {avgUserMinutes != null && avgCtcSeconds != null && (
-                <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex justify-between">
+                <div className="mt-4 pt-3 border-t border-th-border text-xs text-th-text2 flex justify-between">
                   <span>Your avg: {Math.round(avgUserMinutes)}m</span>
                   <span>CTC avg: {Math.round(avgCtcSeconds / 60)}m</span>
                 </div>
@@ -277,8 +280,8 @@ export default function Stats() {
 
             {/* Top rules */}
             {topRules.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <h2 className="font-semibold text-sm text-gray-900 mb-3">
+              <div className="bg-th-card rounded-xl border border-th-border p-4">
+                <h2 className="font-semibold text-sm text-th-text1 mb-3">
                   Most completed rule types
                 </h2>
                 <div className="space-y-2">
@@ -286,14 +289,14 @@ export default function Stats() {
                     const pct = Math.round((count / completedEntries.length) * 100);
                     return (
                       <div key={name} className="flex items-center gap-2 text-sm">
-                        <span className="w-28 text-gray-600 text-xs truncate">{name}</span>
-                        <div className="flex-1 bg-gray-100 rounded-full h-2">
+                        <span className="w-28 text-th-text2 text-xs truncate">{name}</span>
+                        <div className="flex-1 bg-th-hover rounded-full h-2">
                           <div
                             className="bg-blue-400 h-2 rounded-full"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <span className="text-xs text-gray-500 w-8 text-right">{count}</span>
+                        <span className="text-xs text-th-text2 w-8 text-right">{count}</span>
                       </div>
                     );
                   })}
