@@ -519,6 +519,18 @@ export default function Home() {
           ) : null}
         </main>
       </div>
+
+      <footer className="mt-8 pb-6 text-center text-xs text-th-text3">
+        Made by{" "}
+        <a
+          href="https://docs.google.com/forms/d/e/1FAIpQLSd8dru84uSsy8eMWLn2Jz44mhbOxp6cn3lAVyO1f_kq4kwrrA/viewform"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-th-text2 underline underline-offset-2"
+        >
+          Andy Bohn
+        </a>
+      </footer>
     </div>
   );
 }
