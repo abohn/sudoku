@@ -37,6 +37,50 @@ export default function Stats() {
       .catch(() => {});
   }, []);
 
+  // ---- Channel-level stats ----
+
+  // Videos per month (all time, by year)
+  const videosByMonth: Record<string, number> = {};
+  for (const v of allVideos) {
+    const key = v.published_at.slice(0, 7);
+    videosByMonth[key] = (videosByMonth[key] ?? 0) + 1;
+  }
+  const monthKeys = Object.keys(videosByMonth).sort();
+  const maxVideosPerMonth = Math.max(...Object.values(videosByMonth), 1);
+
+  // Top 10 constraints across all videos
+  const constraintCounts = new Map<string, { name: string; count: number }>();
+  for (const v of allVideos) {
+    for (const { rule } of v.rules) {
+      if (rule.slug === "unique-rules") continue;
+      const e = constraintCounts.get(rule.slug) ?? { name: rule.display_name, count: 0 };
+      constraintCounts.set(rule.slug, { ...e, count: e.count + 1 });
+    }
+  }
+  const topConstraints = [...constraintCounts.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+  const maxConstraintCount = topConstraints[0]?.count ?? 1;
+
+  // Solver breakdown
+  const solverCounts: Record<string, number> = {};
+  for (const v of allVideos) {
+    if (v.solver_name) solverCounts[v.solver_name] = (solverCounts[v.solver_name] ?? 0) + 1;
+  }
+  const solverEntries = Object.entries(solverCounts).sort((a, b) => b[1] - a[1]);
+  const maxSolverCount = solverEntries[0]?.[1] ?? 1;
+
+  // Top 10 setters
+  const setterCounts: Record<string, number> = {};
+  for (const v of allVideos) {
+    if (v.setter_name) setterCounts[v.setter_name] = (setterCounts[v.setter_name] ?? 0) + 1;
+  }
+  const topSetters = Object.entries(setterCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  const maxSetterCount = topSetters[0]?.[1] ?? 1;
+
+  // ---- Personal stats ----
   const videoMap = new Map(allVideos.map((v) => [v.youtube_id, v]));
   const completedEntries = Object.entries(completed)
     .map(([id, rec]) => ({ video: videoMap.get(id), rec }))
@@ -115,11 +159,113 @@ export default function Stats() {
           <Link to="/" className="text-sm text-blue-600 hover:underline">
             ← Back
           </Link>
-          <h1 className="text-lg font-bold text-th-text1">My Stats</h1>
+          <h1 className="text-lg font-bold text-th-text1">Stats</h1>
         </div>
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        {/* ---- Channel Stats ---- */}
+        {allVideos.length > 0 && (
+          <>
+            <h2 className="text-base font-semibold text-th-text1">Channel</h2>
+
+            {/* Videos per month */}
+            <div className="bg-th-card rounded-xl border border-th-border p-4">
+              <h3 className="font-semibold text-sm text-th-text1 mb-4">
+                Puzzles per month — all {allVideos.length.toLocaleString()} videos
+              </h3>
+              <div className="flex items-end gap-px h-20">
+                {monthKeys.map((m) => {
+                  const count = videosByMonth[m] ?? 0;
+                  const pct = Math.round((count / maxVideosPerMonth) * 100);
+                  return (
+                    <div
+                      key={m}
+                      className="flex-1 bg-indigo-400 rounded-sm opacity-80 hover:opacity-100 transition-opacity"
+                      style={{ height: `${Math.max(pct, 2)}%` }}
+                      title={`${m}: ${count}`}
+                    />
+                  );
+                })}
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[10px] text-th-text3">{monthKeys[0]}</span>
+                <span className="text-[10px] text-th-text3">{monthKeys[monthKeys.length - 1]}</span>
+              </div>
+            </div>
+
+            {/* Top constraints + Solver breakdown side by side */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Top 10 constraints */}
+              <div className="bg-th-card rounded-xl border border-th-border p-4">
+                <h3 className="font-semibold text-sm text-th-text1 mb-3">Top constraints</h3>
+                <div className="space-y-1.5">
+                  {topConstraints.map(({ name, count }) => (
+                    <div key={name} className="flex items-center gap-2">
+                      <span className="text-[11px] text-th-text2 w-24 truncate shrink-0">
+                        {name}
+                      </span>
+                      <div className="flex-1 bg-th-hover rounded-full h-1.5">
+                        <div
+                          className="bg-indigo-400 h-1.5 rounded-full"
+                          style={{ width: `${Math.round((count / maxConstraintCount) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-th-text3 w-8 text-right shrink-0">
+                        {count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Solver breakdown */}
+              <div className="bg-th-card rounded-xl border border-th-border p-4">
+                <h3 className="font-semibold text-sm text-th-text1 mb-3">Solver</h3>
+                <div className="space-y-1.5">
+                  {solverEntries.map(([name, count]) => (
+                    <div key={name} className="flex items-center gap-2">
+                      <span className="text-[11px] text-th-text2 w-12 shrink-0">{name}</span>
+                      <div className="flex-1 bg-th-hover rounded-full h-1.5">
+                        <div
+                          className="bg-blue-400 h-1.5 rounded-full"
+                          style={{ width: `${Math.round((count / maxSolverCount) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-th-text3 w-10 text-right shrink-0">
+                        {count.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Top 10 setters */}
+                <h3 className="font-semibold text-sm text-th-text1 mt-5 mb-3">Top setters</h3>
+                <div className="space-y-1.5">
+                  {topSetters.map(([name, count]) => (
+                    <div key={name} className="flex items-center gap-2">
+                      <span className="text-[11px] text-th-text2 w-24 truncate shrink-0">
+                        {name}
+                      </span>
+                      <div className="flex-1 bg-th-hover rounded-full h-1.5">
+                        <div
+                          className="bg-emerald-400 h-1.5 rounded-full"
+                          style={{ width: `${Math.round((count / maxSetterCount) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-th-text3 w-8 text-right shrink-0">
+                        {count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-th-border pt-2" />
+            <h2 className="text-base font-semibold text-th-text1">My Stats</h2>
+          </>
+        )}
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
