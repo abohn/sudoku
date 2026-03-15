@@ -436,7 +436,7 @@ export default function Home() {
                         >
                           <div
                             className="w-full bg-indigo-400 dark:bg-indigo-500 rounded-sm opacity-80 hover:opacity-100 transition-opacity"
-                            style={{ height: `${Math.max(pct, 4)}%` }}
+                            style={{ height: `${count > 0 ? Math.max(pct, 2) : 0}%` }}
                           />
                         </div>
                       );
@@ -444,12 +444,76 @@ export default function Home() {
                   </div>
                 );
               })()}
-              <div className="flex justify-between mt-1">
-                <span className="text-[10px] text-th-text3">{results.histogram[0].period}</span>
-                <span className="text-[10px] text-th-text3">
-                  {results.histogram[results.histogram.length - 1].period}
-                </span>
-              </div>
+              {(() => {
+                const hist = results.histogram;
+                const gran = results.granularity;
+                const n = hist.length;
+                // Pick tick indices at natural calendar boundaries, targeting ~5 ticks.
+                // For quarter: every year (Q1). For month: every year (Jan) or every
+                // 6 months if the range is short. For year: thin by stride if needed.
+                const yearOf = (p: string) => p.slice(0, 4);
+
+                // Labeled year ticks: every Q1 / January / year bar.
+                // Downsample to every-other-year only if there are > 10.
+                // Always pin first and last so there are ≥ 2 labels.
+                let yearTicks: { i: number; label: string }[] = [];
+                if (gran === "year") {
+                  hist.forEach(({ period }, i) => yearTicks.push({ i, label: period }));
+                } else if (gran === "quarter") {
+                  hist.forEach(({ period }, i) => {
+                    if (period.endsWith("Q1")) yearTicks.push({ i, label: yearOf(period) });
+                  });
+                } else {
+                  hist.forEach(({ period }, i) => {
+                    if (period.endsWith("-01")) yearTicks.push({ i, label: yearOf(period) });
+                  });
+                }
+                if (yearTicks.length > 10) yearTicks = yearTicks.filter((_, idx) => idx % 2 === 0);
+                if (!yearTicks.some((t) => t.i === 0))
+                  yearTicks.unshift({ i: 0, label: yearOf(hist[0].period) });
+                if (!yearTicks.some((t) => t.i === n - 1))
+                  yearTicks.push({ i: n - 1, label: yearOf(hist[n - 1].period) });
+
+                // Unlabeled sub-year tick marks (Q2/Q3/Q4 or monthly quarters).
+                const subTicks: number[] = [];
+                if (gran === "quarter") {
+                  hist.forEach(({ period }, i) => {
+                    if (!period.endsWith("Q1")) subTicks.push(i);
+                  });
+                } else if (gran === "month") {
+                  hist.forEach(({ period }, i) => {
+                    const m = parseInt(period.slice(5, 7));
+                    if (m === 4 || m === 7 || m === 10) subTicks.push(i);
+                  });
+                }
+
+                const rotated = yearTicks.length > 8;
+                return (
+                  <div className={`relative mt-1 ${rotated ? "h-6" : "h-4"}`}>
+                    {subTicks.map((i) => (
+                      <span
+                        key={`s${i}`}
+                        className="absolute top-0 w-px h-1.5 -translate-x-1/2 bg-th-text3 opacity-20"
+                        style={{ left: `${(i / (n - 1)) * 100}%` }}
+                      />
+                    ))}
+                    {yearTicks.map(({ i, label }) => (
+                      <span
+                        key={i}
+                        className={`absolute whitespace-nowrap text-th-text3 ${rotated ? "text-[8px]" : "text-[9px]"}`}
+                        style={{
+                          left: `${(i / (n - 1)) * 100}%`,
+                          ...(rotated
+                            ? { transform: "rotate(-45deg)", transformOrigin: "right top" }
+                            : { transform: "translateX(-50%)" }),
+                        }}
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
