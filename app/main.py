@@ -66,8 +66,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="CTC Puzzle Database",
-    description="Search and filter Cracking the Cryptic sudoku puzzles by rule type.",
+    title="CTC Puzzle Archive",
+    description="Search and filter Cracking the Cryptic puzzles by rule type.",
     version="1.0.0",
     lifespan=lifespan,
 )

@@ -264,7 +264,7 @@ export default function Home() {
                 Cracking the Cryptic
               </h1>
               <p className="text-xs text-th-text3 hidden sm:block leading-tight">
-                Puzzle Archive — search by rule type, setter, difficulty &amp; more
+                Puzzle Archive — sudoku, crosswords &amp; more
               </p>
             </div>
           </div>

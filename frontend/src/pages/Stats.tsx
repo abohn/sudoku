@@ -380,7 +380,10 @@ export default function Stats() {
 
             {/* Top setters */}
             <div className="bg-th-card rounded-xl border border-th-border p-4 space-y-4">
-              <h3 className="font-semibold text-sm text-th-text1">Top setters</h3>
+              <div>
+                <h3 className="font-semibold text-sm text-th-text1">Top setters</h3>
+                <p className="text-[11px] text-th-text3 mt-0.5">All puzzle types</p>
+              </div>
               <div className="space-y-1.5">
                 {topSetters.map(([name, count]) => (
                   <div key={name} className="flex items-center gap-2">

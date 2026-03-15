@@ -12,6 +12,10 @@
   --th-text2: #6b7280;
   --th-text3: #9ca3af;
 
+  --sidebar-word-bg: #f0fdfa;
+  --sidebar-word-border: #99f6e4;
+  --sidebar-word-header: #0f766e;
+
   --sidebar-pencil-bg: #fffbeb;
   --sidebar-pencil-border: #fde68a;
   --sidebar-pencil-header: #92400e;
@@ -32,6 +36,10 @@ html.dark {
   --th-text2: #999999;
   --th-text3: #5e5e5e;
 
+  --sidebar-word-bg: rgba(20, 90, 80, 0.18);
+  --sidebar-word-border: rgba(20, 184, 166, 0.35);
+  --sidebar-word-header: #2dd4bf;
+
   --sidebar-pencil-bg: rgba(120, 53, 15, 0.18);
   --sidebar-pencil-border: rgba(180, 83, 9, 0.35);
   --sidebar-pencil-header: #fbbf24;
@@ -51,6 +59,10 @@ html.warm {
   --th-text1: #3d2c1e;
   --th-text2: #7c6055;
   --th-text3: #a89080;
+
+  --sidebar-word-bg: #ecfdf5;
+  --sidebar-word-border: #6ee7b755;
+  --sidebar-word-header: #065f46;
 
   --sidebar-pencil-bg: #fef3c7;
   --sidebar-pencil-border: #f59e0b55;
@@ -79,6 +91,14 @@ html.warm {
 }
 
 /* ── Sidebar section theming ───────────────────────────────── */
+.sidebar-word {
+  background-color: var(--sidebar-word-bg);
+  border-color: var(--sidebar-word-border);
+}
+.sidebar-word-header {
+  color: var(--sidebar-word-header);
+}
+
 .sidebar-pencil {
   background-color: var(--sidebar-pencil-bg);
   border-color: var(--sidebar-pencil-border);
@@ -105,11 +125,13 @@ html.warm {
 }
 
 /* Rule tags inside themed sidebar sections — only unselected tags get the theme override */
+.sidebar-word .rule-tag:not([data-selected="true"]),
 .sidebar-pencil .rule-tag:not([data-selected="true"]),
 .sidebar-sudoku .rule-tag:not([data-selected="true"]) {
   background-color: var(--th-card);
   color: var(--th-text1);
 }
+.sidebar-word .rule-tag:not([data-selected="true"]):hover,
 .sidebar-pencil .rule-tag:not([data-selected="true"]):hover,
 .sidebar-sudoku .rule-tag:not([data-selected="true"]):hover {
   background-color: var(--th-hover);
