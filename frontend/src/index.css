@@ -90,6 +90,13 @@ html.warm {
   }
 }
 
+/* ── Sticky header ─────────────────────────────────────────── */
+.sticky-header {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: color-mix(in srgb, var(--th-card) 88%, transparent);
+}
+
 /* ── Sidebar section theming ───────────────────────────────── */
 .sidebar-word {
   background-color: var(--sidebar-word-bg);
