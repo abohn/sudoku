@@ -109,6 +109,87 @@ function LineChart({
   );
 }
 
+function computeRuleCategoryStats(
+  videos: VideoSummary[],
+  category: "sudoku" | "pencil" | "word",
+  topN = 10,
+  seriesN = 5
+) {
+  const counts = new Map<string, { slug: string; name: string; count: number }>();
+  for (const v of videos) {
+    for (const { rule } of v.rules) {
+      if (rule.category !== category || rule.slug === "unique-rules") continue;
+      const e = counts.get(rule.slug) ?? { slug: rule.slug, name: rule.display_name, count: 0 };
+      counts.set(rule.slug, { ...e, count: e.count + 1 });
+    }
+  }
+  const top = [...counts.values()].sort((a, b) => b.count - a.count).slice(0, topN);
+  const maxCount = top[0]?.count ?? 1;
+  const topSeries = top.slice(0, seriesN);
+  const timeSeries: Record<string, Record<string, number>> = {};
+  for (const { slug } of topSeries) timeSeries[slug] = {};
+  for (const v of videos) {
+    const month = v.published_at.slice(0, 7);
+    for (const { rule } of v.rules) {
+      if (timeSeries[rule.slug] !== undefined) {
+        timeSeries[rule.slug][month] = (timeSeries[rule.slug][month] ?? 0) + 1;
+      }
+    }
+  }
+  return { top, maxCount, topSeries, timeSeries };
+}
+
+function RuleCategorySection({
+  title,
+  barColor,
+  top,
+  maxCount,
+  topSeries,
+  timeSeries,
+  monthKeys,
+}: {
+  title: string;
+  barColor: string;
+  top: { name: string; count: number }[];
+  maxCount: number;
+  topSeries: { slug: string; name: string }[];
+  timeSeries: Record<string, Record<string, number>>;
+  monthKeys: string[];
+}) {
+  if (top.length === 0) return null;
+  return (
+    <div className="bg-th-card rounded-xl border border-th-border p-4 space-y-4">
+      <h3 className="font-semibold text-sm text-th-text1">{title}</h3>
+      <div className="space-y-1.5">
+        {top.map(({ name, count }) => (
+          <div key={name} className="flex items-center gap-2">
+            <span className="text-[11px] text-th-text2 w-28 truncate shrink-0">{name}</span>
+            <div className="flex-1 bg-th-hover rounded-full h-1.5">
+              <div
+                className={`${barColor} h-1.5 rounded-full`}
+                style={{ width: `${Math.round((count / maxCount) * 100)}%` }}
+              />
+            </div>
+            <span className="text-[11px] text-th-text3 w-10 text-right shrink-0">
+              {count.toLocaleString()}
+            </span>
+          </div>
+        ))}
+      </div>
+      {topSeries.length > 0 && monthKeys.length > 1 && (
+        <div className="border-t border-th-border pt-3">
+          <p className="text-[11px] text-th-text3 mb-2">Frequency over time</p>
+          <LineChart
+            months={monthKeys}
+            series={topSeries.map(({ slug }) => timeSeries[slug])}
+            labels={topSeries.map(({ name }) => name)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Stats() {
   const { completed, favorites, watchlist } = useUserData();
   const [allVideos, setAllVideos] = useState<VideoSummary[]>([]);
@@ -121,7 +202,6 @@ export default function Stats() {
 
   // ---- Channel-level stats ----
 
-  // Videos per month (all time, by year)
   const videosByMonth: Record<string, number> = {};
   for (const v of allVideos) {
     const key = v.published_at.slice(0, 7);
@@ -130,23 +210,9 @@ export default function Stats() {
   const monthKeys = Object.keys(videosByMonth).sort();
   const maxVideosPerMonth = Math.max(...Object.values(videosByMonth), 1);
 
-  // Top 10 constraints across all videos
-  const constraintCounts = new Map<string, { slug: string; name: string; count: number }>();
-  for (const v of allVideos) {
-    for (const { rule } of v.rules) {
-      if (rule.slug === "unique-rules") continue;
-      const e = constraintCounts.get(rule.slug) ?? {
-        slug: rule.slug,
-        name: rule.display_name,
-        count: 0,
-      };
-      constraintCounts.set(rule.slug, { ...e, count: e.count + 1 });
-    }
-  }
-  const topConstraints = [...constraintCounts.values()]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-  const maxConstraintCount = topConstraints[0]?.count ?? 1;
+  const sudokuStats = computeRuleCategoryStats(allVideos, "sudoku");
+  const pencilStats = computeRuleCategoryStats(allVideos, "pencil");
+  const wordStats = computeRuleCategoryStats(allVideos, "word", 20, 5);
 
   // Top 10 setters
   const setterCounts: Record<string, number> = {};
@@ -158,21 +224,7 @@ export default function Stats() {
     .slice(0, 10);
   const maxSetterCount = topSetters[0]?.[1] ?? 1;
 
-  // ---- Time series for top-5 constraints and setters ----
-  const TOP_SERIES = 5;
-  const top5Constraints = topConstraints.slice(0, TOP_SERIES);
-  const constraintTimeSeries: Record<string, Record<string, number>> = {};
-  for (const { slug } of top5Constraints) constraintTimeSeries[slug] = {};
-  for (const v of allVideos) {
-    const month = v.published_at.slice(0, 7);
-    for (const { rule } of v.rules) {
-      if (constraintTimeSeries[rule.slug] !== undefined) {
-        constraintTimeSeries[rule.slug][month] = (constraintTimeSeries[rule.slug][month] ?? 0) + 1;
-      }
-    }
-  }
-
-  const top5SetterNames = topSetters.slice(0, TOP_SERIES).map(([name]) => name);
+  const top5SetterNames = topSetters.slice(0, 5).map(([name]) => name);
   const setterTimeSeries: Record<string, Record<string, number>> = {};
   for (const name of top5SetterNames) setterTimeSeries[name] = {};
   for (const v of allVideos) {
@@ -188,7 +240,6 @@ export default function Stats() {
     .map(([id, rec]) => ({ video: videoMap.get(id), rec }))
     .filter((e): e is { video: VideoSummary; rec: (typeof e)["rec"] } => e.video !== undefined);
 
-  // Rule frequency among completed puzzles
   const ruleCounts = new Map<string, { name: string; count: number }>();
   for (const { video } of completedEntries) {
     for (const { rule } of video.rules) {
@@ -198,7 +249,6 @@ export default function Stats() {
   }
   const topRules = [...ruleCounts.values()].sort((a, b) => b.count - a.count).slice(0, 8);
 
-  // Difficulty distribution
   const diffCounts: Record<string, number> = {
     Easy: 0,
     Medium: 0,
@@ -210,7 +260,6 @@ export default function Stats() {
     diffCounts[difficultyLabel(video.difficulty_score)]++;
   }
 
-  // Per-difficulty solve time comparison: user vs CTC solver
   type DiffStats = { userMinutes: number[]; ctcSeconds: number[] };
   const byDiff: Record<string, DiffStats> = {
     Easy: { userMinutes: [], ctcSeconds: [] },
@@ -231,7 +280,6 @@ export default function Stats() {
 
   const hasAnySolveTime = completedEntries.some((e) => e.rec.solveMinutes != null);
 
-  // Completions by month (last 12 months)
   const byMonth: Record<string, number> = {};
   for (const { rec } of completedEntries) {
     const month = rec.completedAt.slice(0, 7);
@@ -240,7 +288,6 @@ export default function Stats() {
   const months = Object.keys(byMonth).sort().slice(-12);
   const maxMonthCount = Math.max(...Object.values(byMonth), 1);
 
-  // Average CTC solve time across all completed (for summary card)
   const ctcWithTime = completedEntries.filter((e) => e.video.solve_duration_seconds != null);
   const avgCtcSeconds =
     ctcWithTime.length > 0
@@ -271,7 +318,7 @@ export default function Stats() {
           <>
             <h2 className="text-base font-semibold text-th-text1">Channel</h2>
 
-            {/* Videos per month */}
+            {/* Puzzles per month */}
             <div className="bg-th-card rounded-xl border border-th-border p-4">
               <h3 className="font-semibold text-sm text-th-text1 mb-4">
                 Puzzles per month — all {allVideos.length.toLocaleString()} videos
@@ -293,7 +340,7 @@ export default function Stats() {
               <div className="relative mt-1 h-4">
                 {monthKeys.map((m, i) => {
                   if (!m.endsWith("-01")) return null;
-                  const pct = (i / (monthKeys.length - 1)) * 100;
+                  const pct = ((i + 0.5) / monthKeys.length) * 100;
                   return (
                     <span
                       key={m}
@@ -307,85 +354,66 @@ export default function Stats() {
               </div>
             </div>
 
-            {/* Top constraints + Solver breakdown side by side */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Top 10 constraints */}
-              <div className="bg-th-card rounded-xl border border-th-border p-4">
-                <h3 className="font-semibold text-sm text-th-text1 mb-3">Top constraints</h3>
-                <div className="space-y-1.5">
-                  {topConstraints.map(({ name, count }) => (
-                    <div key={name} className="flex items-center gap-2">
-                      <span className="text-[11px] text-th-text2 w-24 truncate shrink-0">
-                        {name}
-                      </span>
-                      <div className="flex-1 bg-th-hover rounded-full h-1.5">
-                        <div
-                          className="bg-indigo-400 h-1.5 rounded-full"
-                          style={{ width: `${Math.round((count / maxConstraintCount) * 100)}%` }}
-                        />
-                      </div>
-                      <span className="text-[11px] text-th-text3 w-8 text-right shrink-0">
-                        {count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* Sudoku Constraints */}
+            <RuleCategorySection
+              title="Sudoku constraints"
+              barColor="bg-indigo-400"
+              {...sudokuStats}
+              monthKeys={monthKeys}
+            />
 
-              {/* Top setters */}
-              <div className="bg-th-card rounded-xl border border-th-border p-4">
-                <h3 className="font-semibold text-sm text-th-text1 mb-3">Top setters</h3>
-                <div className="space-y-1.5">
-                  {topSetters.map(([name, count]) => (
-                    <div key={name} className="flex items-center gap-2">
-                      <span className="text-[11px] text-th-text2 w-24 truncate shrink-0">
-                        {name}
-                      </span>
-                      <div className="flex-1 bg-th-hover rounded-full h-1.5">
-                        <div
-                          className="bg-emerald-400 h-1.5 rounded-full"
-                          style={{ width: `${Math.round((count / maxSetterCount) * 100)}%` }}
-                        />
-                      </div>
-                      <span className="text-[11px] text-th-text3 w-8 text-right shrink-0">
-                        {count}
-                      </span>
+            {/* Pencil Puzzles */}
+            <RuleCategorySection
+              title="Pencil puzzles"
+              barColor="bg-amber-400"
+              {...pencilStats}
+              monthKeys={monthKeys}
+            />
+
+            {/* Word Puzzles */}
+            <RuleCategorySection
+              title="Word puzzles"
+              barColor="bg-teal-400"
+              {...wordStats}
+              monthKeys={monthKeys}
+            />
+
+            {/* Top setters */}
+            <div className="bg-th-card rounded-xl border border-th-border p-4 space-y-4">
+              <h3 className="font-semibold text-sm text-th-text1">Top setters</h3>
+              <div className="space-y-1.5">
+                {topSetters.map(([name, count]) => (
+                  <div key={name} className="flex items-center gap-2">
+                    <span className="text-[11px] text-th-text2 w-28 truncate shrink-0">{name}</span>
+                    <div className="flex-1 bg-th-hover rounded-full h-1.5">
+                      <div
+                        className="bg-emerald-400 h-1.5 rounded-full"
+                        style={{ width: `${Math.round((count / maxSetterCount) * 100)}%` }}
+                      />
                     </div>
-                  ))}
-                </div>
+                    <span className="text-[11px] text-th-text3 w-10 text-right shrink-0">
+                      {count}
+                    </span>
+                  </div>
+                ))}
               </div>
+              {top5SetterNames.length > 0 && monthKeys.length > 1 && (
+                <div className="border-t border-th-border pt-3">
+                  <p className="text-[11px] text-th-text3 mb-2">Frequency over time</p>
+                  <LineChart
+                    months={monthKeys}
+                    series={top5SetterNames.map((name) => setterTimeSeries[name])}
+                    labels={top5SetterNames}
+                  />
+                </div>
+              )}
             </div>
-
-            {/* Top constraints over time */}
-            {top5Constraints.length > 0 && monthKeys.length > 1 && (
-              <div className="bg-th-card rounded-xl border border-th-border p-4">
-                <h3 className="font-semibold text-sm text-th-text1 mb-3">
-                  Top constraints over time
-                </h3>
-                <LineChart
-                  months={monthKeys}
-                  series={top5Constraints.map(({ slug }) => constraintTimeSeries[slug])}
-                  labels={top5Constraints.map(({ name }) => name)}
-                />
-              </div>
-            )}
-
-            {/* Top setters over time */}
-            {top5SetterNames.length > 0 && monthKeys.length > 1 && (
-              <div className="bg-th-card rounded-xl border border-th-border p-4">
-                <h3 className="font-semibold text-sm text-th-text1 mb-3">Top setters over time</h3>
-                <LineChart
-                  months={monthKeys}
-                  series={top5SetterNames.map((name) => setterTimeSeries[name])}
-                  labels={top5SetterNames}
-                />
-              </div>
-            )}
 
             <div className="border-t border-th-border pt-2" />
             <h2 className="text-base font-semibold text-th-text1">My Stats</h2>
           </>
         )}
+
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
