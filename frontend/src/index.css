@@ -90,8 +90,9 @@ html.warm {
   }
 }
 
-/* ── Sticky header ─────────────────────────────────────────── */
-.sticky-header {
+/* ── Frosted glass (header + tooltips) ─────────────────────── */
+.sticky-header,
+.glass-panel {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   background-color: color-mix(in srgb, var(--th-card) 88%, transparent);

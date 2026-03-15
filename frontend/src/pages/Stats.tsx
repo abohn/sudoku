@@ -52,6 +52,8 @@ function LineChart({
   labels: string[];
   cumulative?: boolean;
 }) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+
   if (months.length < 2) return null;
   const displaySeries = cumulative ? accumulate(series, months) : series;
 
@@ -68,9 +70,35 @@ function LineChart({
 
   const yearTicks = months.map((m, i) => ({ m, i })).filter(({ m }) => m.endsWith("-01"));
 
+  function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const fraction = (e.clientX - rect.left) / rect.width;
+    const idx = Math.max(
+      0,
+      Math.min(months.length - 1, Math.round(fraction * (months.length - 1)))
+    );
+    setHoverIdx(idx);
+  }
+
+  const hoverMonth = hoverIdx !== null ? months[hoverIdx] : null;
+  const hoverValues =
+    hoverIdx !== null && hoverMonth
+      ? displaySeries
+          .map((s, i) => ({ label: labels[i], value: s[hoverMonth] ?? 0, color: LINE_COLORS[i] }))
+          .sort((a, b) => b.value - a.value)
+      : [];
+
+  const tooltipOnRight = hoverIdx !== null && hoverIdx <= months.length * 0.6;
+
   return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 100 }}>
+    <div className="relative">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        style={{ height: 100 }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoverIdx(null)}
+      >
         {yearTicks.map(({ m, i }) => (
           <g key={m}>
             <line
@@ -109,7 +137,52 @@ function LineChart({
             />
           );
         })}
+        {hoverIdx !== null && hoverMonth && (
+          <>
+            <line
+              x1={xOf(hoverIdx)}
+              y1={0}
+              x2={xOf(hoverIdx)}
+              y2={chartH}
+              stroke="currentColor"
+              strokeWidth="1"
+              opacity="0.35"
+              strokeDasharray="3 2"
+            />
+            {displaySeries.map((s, idx) => (
+              <circle
+                key={labels[idx]}
+                cx={xOf(hoverIdx)}
+                cy={yOf(s[hoverMonth] ?? 0)}
+                r="3"
+                fill={LINE_COLORS[idx]}
+                opacity="0.9"
+              />
+            ))}
+          </>
+        )}
       </svg>
+      {hoverIdx !== null && hoverMonth && (
+        <div
+          className="absolute pointer-events-none top-0 glass-panel border border-th-border rounded-lg shadow-lg px-2.5 py-2 text-xs z-20"
+          style={{
+            left: `${(hoverIdx / (months.length - 1)) * 100}%`,
+            transform: tooltipOnRight ? "translate(6px, 0)" : "translate(calc(-100% - 6px), 0)",
+          }}
+        >
+          <p className="text-th-text3 font-medium mb-1">{hoverMonth}</p>
+          {hoverValues.map(({ label, value, color }) => (
+            <div key={label} className="flex items-center gap-1.5 whitespace-nowrap">
+              <span
+                className="inline-block w-2 h-2 rounded-full shrink-0"
+                style={{ background: color }}
+              />
+              <span className="text-th-text2">{label}:</span>
+              <span className="text-th-text1 font-medium">{value.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
         {labels.map((label, idx) => (
           <div key={label} className="flex items-center gap-1">
@@ -351,6 +424,12 @@ export default function Stats() {
 
   const [ppmCumulative, setPpmCumulative] = useState(false);
   const [setterCumulative, setSetterCumulative] = useState(false);
+  const [ppmHover, setPpmHover] = useState<{ m: string; count: number; idx: number } | null>(null);
+  const [completionsHover, setCompletionsHover] = useState<{
+    m: string;
+    count: number;
+    idx: number;
+  } | null>(null);
 
   // Cumulative total for the puzzles-per-month line view
   const cumulativeTotals: Record<string, number> = {};
@@ -392,17 +471,26 @@ export default function Stats() {
                   labels={["Total videos"]}
                 />
               ) : (
-                <>
+                <div className="relative">
+                  {ppmHover && (
+                    <div
+                      className="absolute -top-7 pointer-events-none glass-panel border border-th-border rounded px-2 py-0.5 text-[10px] text-th-text1 shadow-lg z-10 -translate-x-1/2 whitespace-nowrap"
+                      style={{ left: `${((ppmHover.idx + 0.5) / monthKeys.length) * 100}%` }}
+                    >
+                      {ppmHover.m}: {ppmHover.count}
+                    </div>
+                  )}
                   <div className="flex items-end gap-px h-20">
-                    {monthKeys.map((m) => {
+                    {monthKeys.map((m, idx) => {
                       const count = videosByMonth[m] ?? 0;
                       const pct = Math.round((count / maxVideosPerMonth) * 100);
                       return (
                         <div
                           key={m}
-                          className="flex-1 bg-indigo-400 rounded-sm opacity-80 hover:opacity-100 transition-opacity"
+                          className="flex-1 bg-indigo-400 rounded-sm opacity-80 hover:opacity-100 transition-opacity cursor-crosshair"
                           style={{ height: `${Math.max(pct, 2)}%` }}
-                          title={`${m}: ${count}`}
+                          onMouseEnter={() => setPpmHover({ m, count, idx })}
+                          onMouseLeave={() => setPpmHover(null)}
                         />
                       );
                     })}
@@ -422,7 +510,7 @@ export default function Stats() {
                       );
                     })}
                   </div>
-                </>
+                </div>
               )}
             </div>
 
@@ -525,23 +613,38 @@ export default function Stats() {
             {months.length > 0 && (
               <div className="bg-th-card rounded-xl border border-th-border p-4">
                 <h2 className="font-semibold text-sm text-th-text1 mb-4">Completions by month</h2>
-                <div className="flex items-end gap-1 h-24">
-                  {months.map((m) => {
-                    const count = byMonth[m] ?? 0;
-                    const height = Math.round((count / maxMonthCount) * 100);
-                    return (
-                      <div key={m} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-[10px] text-th-text2">{count}</span>
+                <div className="relative">
+                  {completionsHover && (
+                    <div
+                      className="absolute -top-6 pointer-events-none glass-panel border border-th-border rounded px-2 py-0.5 text-[10px] text-th-text1 shadow-lg z-10 -translate-x-1/2 whitespace-nowrap"
+                      style={{ left: `${((completionsHover.idx + 0.5) / months.length) * 100}%` }}
+                    >
+                      {completionsHover.m}: {completionsHover.count}
+                    </div>
+                  )}
+                  <div className="flex items-end gap-1 h-24">
+                    {months.map((m, idx) => {
+                      const count = byMonth[m] ?? 0;
+                      const height = Math.round((count / maxMonthCount) * 100);
+                      return (
                         <div
-                          className="w-full bg-blue-500 rounded-t"
-                          style={{ height: `${height}%`, minHeight: count > 0 ? "4px" : "0" }}
-                        />
-                        <span className="text-[9px] text-th-text3 rotate-45 origin-left whitespace-nowrap">
-                          {m.slice(5)}
-                        </span>
-                      </div>
-                    );
-                  })}
+                          key={m}
+                          className="flex-1 flex flex-col items-center gap-1 cursor-crosshair"
+                          onMouseEnter={() => setCompletionsHover({ m, count, idx })}
+                          onMouseLeave={() => setCompletionsHover(null)}
+                        >
+                          <span className="text-[10px] text-th-text2">{count}</span>
+                          <div
+                            className="w-full bg-blue-500 rounded-t"
+                            style={{ height: `${height}%`, minHeight: count > 0 ? "4px" : "0" }}
+                          />
+                          <span className="text-[9px] text-th-text3 rotate-45 origin-left whitespace-nowrap">
+                            {m.slice(5)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
