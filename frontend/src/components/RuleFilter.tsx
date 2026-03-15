@@ -37,10 +37,14 @@ interface Props {
   onSearchChange: (q: string) => void;
   solveTime: string | undefined;
   onSolveTimeChange: (v: string | null) => void;
+  hasPuzzleUrl: boolean;
+  onHasPuzzleUrlChange: (v: boolean) => void;
   watchlistOnly: boolean;
   onWatchlistOnlyChange: (v: boolean) => void;
   completedOnly: boolean;
   onCompletedOnlyChange: (v: boolean) => void;
+  hideCompleted: boolean;
+  onHideCompletedChange: (v: boolean) => void;
   collections: Collection[];
   selectedCollection: string | null;
   onSelectCollection: (slug: string | null) => void;
@@ -95,10 +99,14 @@ export default function RuleFilter({
   onSearchChange,
   solveTime,
   onSolveTimeChange,
+  hasPuzzleUrl,
+  onHasPuzzleUrlChange,
   watchlistOnly,
   onWatchlistOnlyChange,
   completedOnly,
   onCompletedOnlyChange,
+  hideCompleted,
+  onHideCompletedChange,
   collections,
   selectedCollection,
   onSelectCollection,
@@ -134,24 +142,37 @@ export default function RuleFilter({
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full text-sm bg-th-card text-th-text1 border border-th-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
-          <label className="flex items-center gap-2 text-sm text-th-text2 cursor-pointer select-none mt-2.5">
-            <input
-              type="checkbox"
-              checked={watchlistOnly}
-              onChange={(e) => onWatchlistOnlyChange(e.target.checked)}
-              className="rounded accent-indigo-600"
-            />
-            <span>Saved only</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm text-th-text2 cursor-pointer select-none mt-1.5">
-            <input
-              type="checkbox"
-              checked={completedOnly}
-              onChange={(e) => onCompletedOnlyChange(e.target.checked)}
-              className="rounded accent-indigo-600"
-            />
-            <span>Completed only</span>
-          </label>
+          <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5">
+            {(
+              [
+                { label: "Has puzzle link", checked: hasPuzzleUrl, onChange: onHasPuzzleUrlChange },
+                { label: "Saved only", checked: watchlistOnly, onChange: onWatchlistOnlyChange },
+                {
+                  label: "Completed only",
+                  checked: completedOnly,
+                  onChange: onCompletedOnlyChange,
+                },
+                {
+                  label: "Hide completed",
+                  checked: hideCompleted,
+                  onChange: onHideCompletedChange,
+                },
+              ] as const
+            ).map(({ label, checked, onChange }) => (
+              <label
+                key={label}
+                className="flex items-center gap-1.5 text-sm text-th-text2 cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) => onChange(e.target.checked)}
+                  className="rounded accent-indigo-600"
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* ---- Difficulty + Solve time + Solver ---- */}

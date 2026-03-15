@@ -305,16 +305,6 @@ export default function Home() {
             >
               {order === "desc" ? "↓" : "↑"}
             </button>
-            <label className="flex items-center gap-1.5 text-sm text-th-text2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={hasPuzzleUrl === true}
-                onChange={(e) => setParam("puzzle", e.target.checked ? "1" : null)}
-                className="rounded"
-              />
-              <span className="hidden sm:inline">Has puzzle link</span>
-              <span className="sm:hidden">Puzzle link</span>
-            </label>
             <button
               onClick={pickRandom}
               className="text-sm border border-th-border rounded-lg px-2.5 py-1.5 bg-th-card hover:bg-th-hover text-th-text2"
@@ -385,10 +375,14 @@ export default function Home() {
             onSearchChange={(q) => setParam("q", q || null)}
             solveTime={solveTime}
             onSolveTimeChange={(v) => setParam("solve", v)}
+            hasPuzzleUrl={hasPuzzleUrl === true}
+            onHasPuzzleUrlChange={(v) => setParam("puzzle", v ? "1" : null)}
             watchlistOnly={watchlistOnly}
             onWatchlistOnlyChange={(v) => setParam("watchlist", v ? "1" : null)}
             completedOnly={completedOnly}
             onCompletedOnlyChange={(v) => setParam("done", v ? "1" : null)}
+            hideCompleted={hideCompleted}
+            onHideCompletedChange={setHideCompleted}
             collections={collections}
             selectedCollection={selectedCollection}
             onSelectCollection={(slug) => setParam("collection", slug)}
@@ -397,38 +391,27 @@ export default function Home() {
 
         {/* Main content */}
         <main className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <p className="text-sm text-th-text2">
-              {loading ? (
-                "Loading..."
-              ) : results ? (
-                <>
-                  {results.total.toLocaleString()} puzzle{results.total !== 1 ? "s" : ""}
-                  {(() => {
-                    const ids = results.items.map((v) => v.youtube_id);
-                    const doneCount = ids.filter((id) => completed[id]).length;
-                    const pct = ids.length ? Math.round((doneCount / ids.length) * 100) : 0;
-                    return doneCount > 0 ? (
-                      <span className="ml-2 text-green-600">
-                        · {doneCount}/{ids.length} done ({pct}%)
-                      </span>
-                    ) : null;
-                  })()}
-                </>
-              ) : (
-                ""
-              )}
-            </p>
-            <label className="flex items-center gap-1.5 text-sm text-th-text2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={hideCompleted}
-                onChange={(e) => setHideCompleted(e.target.checked)}
-                className="rounded"
-              />
-              Hide completed
-            </label>
-          </div>
+          <p className="text-sm text-th-text2 mb-4">
+            {loading ? (
+              "Loading..."
+            ) : results ? (
+              <>
+                {results.total.toLocaleString()} puzzle{results.total !== 1 ? "s" : ""}
+                {(() => {
+                  const ids = results.items.map((v) => v.youtube_id);
+                  const doneCount = ids.filter((id) => completed[id]).length;
+                  const pct = ids.length ? Math.round((doneCount / ids.length) * 100) : 0;
+                  return doneCount > 0 ? (
+                    <span className="ml-2 text-green-600">
+                      · {doneCount}/{ids.length} done ({pct}%)
+                    </span>
+                  ) : null;
+                })()}
+              </>
+            ) : (
+              ""
+            )}
+          </p>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-4">
