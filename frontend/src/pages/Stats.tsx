@@ -27,6 +27,88 @@ const DIFF_BAR_CLS: Record<string, string> = {
   Brutal: "bg-red-400",
 };
 
+const LINE_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+
+function LineChart({
+  months,
+  series,
+  labels,
+}: {
+  months: string[];
+  series: Record<string, number>[];
+  labels: string[];
+}) {
+  if (months.length < 2) return null;
+  const W = 800;
+  const chartH = 90;
+  const labelH = 18;
+  const H = chartH + labelH;
+
+  const allValues = series.flatMap((s) => months.map((m) => s[m] ?? 0));
+  const maxVal = Math.max(...allValues, 1);
+
+  const xOf = (i: number) => (i / (months.length - 1)) * W;
+  const yOf = (v: number) => chartH - (v / maxVal) * chartH;
+
+  const yearTicks = months.map((m, i) => ({ m, i })).filter(({ m }) => m.endsWith("-01"));
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 100 }}>
+        {yearTicks.map(({ m, i }) => (
+          <g key={m}>
+            <line
+              x1={xOf(i)}
+              y1={0}
+              x2={xOf(i)}
+              y2={chartH}
+              stroke="currentColor"
+              strokeWidth="0.8"
+              opacity="0.15"
+            />
+            <text
+              x={xOf(i)}
+              y={H - 2}
+              textAnchor="middle"
+              fontSize="11"
+              fill="currentColor"
+              opacity="0.45"
+            >
+              {m.slice(0, 4)}
+            </text>
+          </g>
+        ))}
+        {series.map((s, idx) => {
+          const points = months.map((m, i) => `${xOf(i)},${yOf(s[m] ?? 0)}`).join(" ");
+          return (
+            <polyline
+              key={labels[idx]}
+              points={points}
+              fill="none"
+              stroke={LINE_COLORS[idx]}
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              opacity="0.85"
+            />
+          );
+        })}
+      </svg>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+        {labels.map((label, idx) => (
+          <div key={label} className="flex items-center gap-1">
+            <span
+              className="inline-block w-3 h-0.5 rounded"
+              style={{ background: LINE_COLORS[idx] }}
+            />
+            <span className="text-[10px] text-th-text2">{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Stats() {
   const { completed, favorites, watchlist } = useUserData();
   const [allVideos, setAllVideos] = useState<VideoSummary[]>([]);
@@ -49,11 +131,15 @@ export default function Stats() {
   const maxVideosPerMonth = Math.max(...Object.values(videosByMonth), 1);
 
   // Top 10 constraints across all videos
-  const constraintCounts = new Map<string, { name: string; count: number }>();
+  const constraintCounts = new Map<string, { slug: string; name: string; count: number }>();
   for (const v of allVideos) {
     for (const { rule } of v.rules) {
       if (rule.slug === "unique-rules") continue;
-      const e = constraintCounts.get(rule.slug) ?? { name: rule.display_name, count: 0 };
+      const e = constraintCounts.get(rule.slug) ?? {
+        slug: rule.slug,
+        name: rule.display_name,
+        count: 0,
+      };
       constraintCounts.set(rule.slug, { ...e, count: e.count + 1 });
     }
   }
@@ -71,6 +157,30 @@ export default function Stats() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
   const maxSetterCount = topSetters[0]?.[1] ?? 1;
+
+  // ---- Time series for top-5 constraints and setters ----
+  const TOP_SERIES = 5;
+  const top5Constraints = topConstraints.slice(0, TOP_SERIES);
+  const constraintTimeSeries: Record<string, Record<string, number>> = {};
+  for (const { slug } of top5Constraints) constraintTimeSeries[slug] = {};
+  for (const v of allVideos) {
+    const month = v.published_at.slice(0, 7);
+    for (const { rule } of v.rules) {
+      if (constraintTimeSeries[rule.slug] !== undefined) {
+        constraintTimeSeries[rule.slug][month] = (constraintTimeSeries[rule.slug][month] ?? 0) + 1;
+      }
+    }
+  }
+
+  const top5SetterNames = topSetters.slice(0, TOP_SERIES).map(([name]) => name);
+  const setterTimeSeries: Record<string, Record<string, number>> = {};
+  for (const name of top5SetterNames) setterTimeSeries[name] = {};
+  for (const v of allVideos) {
+    if (v.setter_name && setterTimeSeries[v.setter_name] !== undefined) {
+      const month = v.published_at.slice(0, 7);
+      setterTimeSeries[v.setter_name][month] = (setterTimeSeries[v.setter_name][month] ?? 0) + 1;
+    }
+  }
 
   // ---- Personal stats ----
   const videoMap = new Map(allVideos.map((v) => [v.youtube_id, v]));
@@ -180,9 +290,20 @@ export default function Stats() {
                   );
                 })}
               </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-[10px] text-th-text3">{monthKeys[0]}</span>
-                <span className="text-[10px] text-th-text3">{monthKeys[monthKeys.length - 1]}</span>
+              <div className="relative mt-1 h-4">
+                {monthKeys.map((m, i) => {
+                  if (!m.endsWith("-01")) return null;
+                  const pct = (i / (monthKeys.length - 1)) * 100;
+                  return (
+                    <span
+                      key={m}
+                      className="absolute text-[9px] text-th-text3 -translate-x-1/2"
+                      style={{ left: `${pct}%` }}
+                    >
+                      {m.slice(0, 4)}
+                    </span>
+                  );
+                })}
               </div>
             </div>
 
@@ -234,6 +355,32 @@ export default function Stats() {
                 </div>
               </div>
             </div>
+
+            {/* Top constraints over time */}
+            {top5Constraints.length > 0 && monthKeys.length > 1 && (
+              <div className="bg-th-card rounded-xl border border-th-border p-4">
+                <h3 className="font-semibold text-sm text-th-text1 mb-3">
+                  Top constraints over time
+                </h3>
+                <LineChart
+                  months={monthKeys}
+                  series={top5Constraints.map(({ slug }) => constraintTimeSeries[slug])}
+                  labels={top5Constraints.map(({ name }) => name)}
+                />
+              </div>
+            )}
+
+            {/* Top setters over time */}
+            {top5SetterNames.length > 0 && monthKeys.length > 1 && (
+              <div className="bg-th-card rounded-xl border border-th-border p-4">
+                <h3 className="font-semibold text-sm text-th-text1 mb-3">Top setters over time</h3>
+                <LineChart
+                  months={monthKeys}
+                  series={top5SetterNames.map((name) => setterTimeSeries[name])}
+                  labels={top5SetterNames}
+                />
+              </div>
+            )}
 
             <div className="border-t border-th-border pt-2" />
             <h2 className="text-base font-semibold text-th-text1">My Stats</h2>
