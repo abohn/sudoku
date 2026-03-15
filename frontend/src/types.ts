@@ -5,7 +5,7 @@ export interface Rule {
   description: string | null;
   is_rare: boolean;
   video_count: number;
-  category: "sudoku" | "pencil";
+  category: "sudoku" | "pencil" | "word";
 }
 
 export interface VideoRule {

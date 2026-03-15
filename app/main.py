@@ -17,7 +17,7 @@ from app.rules_data import RULE_DEFINITIONS
 
 
 def seed_rules(db):
-    """Insert any missing rules into the DB."""
+    """Insert or update rules from RULE_DEFINITIONS into the DB."""
     for defn in RULE_DEFINITIONS:
         existing = db.query(Rule).filter(Rule.slug == defn["slug"]).first()
         if not existing:
@@ -25,9 +25,15 @@ def seed_rules(db):
                 Rule(
                     slug=defn["slug"],
                     display_name=defn["display_name"],
-                    description=defn["description"],
+                    description=defn.get("description"),
+                    category=defn.get("category", "sudoku"),
                 )
             )
+        else:
+            # Keep display_name, description, and category in sync with definitions
+            existing.display_name = defn["display_name"]
+            existing.description = defn.get("description")
+            existing.category = defn.get("category", "sudoku")
     db.commit()
 
 

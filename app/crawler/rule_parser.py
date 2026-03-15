@@ -20,12 +20,16 @@ class RuleMatch:
     matched_text: str
 
 
-# Pre-compile patterns for performance
-_COMPILED: list[tuple[str, str, list[re.Pattern]]] = []
+# Pre-compile patterns for performance.
+# Each entry: (slug, display_name, patterns, title_only)
+# title_only=True means patterns are searched against the video title only,
+# not the description. Used for word-puzzle categories whose signals appear in
+# titles but whose terms also appear in CTC descriptions as promotional text.
+_COMPILED: list[tuple[str, str, list[re.Pattern], bool]] = []
 
 for defn in RULE_DEFINITIONS:
     compiled = [re.compile(p, re.IGNORECASE) for p in defn.get("patterns", [])]
-    _COMPILED.append((defn["slug"], defn["display_name"], compiled))
+    _COMPILED.append((defn["slug"], defn["display_name"], compiled, bool(defn.get("title_only"))))
 
 
 # Markers that indicate the start of boilerplate content in CTC descriptions.
@@ -58,23 +62,32 @@ def _puzzle_rules_section(description: str) -> str:
     return description
 
 
-def parse_rules(description: str) -> list[RuleMatch]:
+def parse_rules(description: str, title: str = "") -> list[RuleMatch]:
     """
-    Return a list of RuleMatch objects for all rules detected in the description.
+    Return a list of RuleMatch objects for all rules detected in the description
+    and (optionally) the title.
+
+    Rules with title_only=True are searched against the title only — these are
+    word-puzzle categories whose terms appear in CTC descriptions as promotional
+    text and would cause false positives if matched against the description.
+
     Each rule appears at most once. Order matches the RULE_DEFINITIONS order.
     """
-    if not description:
+    if not description and not title:
         return []
 
-    # Only search the puzzle-rules portion, not channel/app boilerplate
-    text = _puzzle_rules_section(description)
+    desc_section = _puzzle_rules_section(description) if description else ""
 
     matched_slugs: set[str] = set()
     results: list[RuleMatch] = []
 
-    for slug, display_name, patterns in _COMPILED:
+    for slug, display_name, patterns, title_only in _COMPILED:
         if slug == "unique-rules" or not patterns:
             continue
+        # title_only rules must have a title to match against
+        if title_only and not title:
+            continue
+        text = title if title_only else desc_section
         for pattern in patterns:
             m = pattern.search(text)
             if m and slug not in matched_slugs:
@@ -295,24 +308,32 @@ def extract_puzzle_start_seconds(description: str) -> int | None:
 # ---------------------------------------------------------------------------
 
 # Hard-reject patterns: always filter out regardless of description content.
-# These are definitively word/non-logic puzzles on the CTC channel.
+# These are non-puzzle videos on the CTC channel (meta content, word games, etc.).
 # Note: the puzzle-URL check runs BEFORE this, so sudoku videos with any of
 # these words in their title (e.g. "Making Connections, Sudoku Style") are
 # already saved by the time we reach this check.
+# Crosswords are now KEPT and tagged via word-puzzle rule detection.
 _HARD_REJECT_RE = re.compile(
-    r"\bcrossword\b"
-    r"|\bwordle\b"
+    # Non-puzzle word games
+    r"\bwordle\b"
     r"|\bspelling\s+bee\b"
     r"|\bminutecryptic\b"
     r"|\bplusword\b"
     r"|\bquordle\b"
     r"|\boctordle\b"
     r"|\bonly connect\b"  # BBC word/trivia game
-    r"|\bquick cryptic\b"  # Times Quick Cryptic crossword
     r"|\bconnections\b"  # NYT Connections word game
-    r"|\bcodeword\b"  # crossword variant
+    r"|\bcodeword\b"  # word puzzle (not a logic puzzle)
     r"|\bletterboxed\b"  # NYT word game
-    r"|\bblue\s+prince\b",  # video game series streamed by CTC
+    # Video games
+    r"|\bblue\s+prince\b"
+    # CTC channel meta-content (not puzzle videos)
+    r"|the\s+podcast\b.{0,30}\bepisode\b"  # "The Podcast - Episode N"
+    r"|podcast.{0,20}pilot"  # "Podcast - Pilot Episode"
+    r"|cracking\s+the\s+cryptic.{0,30}the\s+(?:movie|extended\s+cut|pitch\s+meeting|miracle\s+movie)"
+    r"|\bthe\s+computer\s+game\b"  # "Cracking The Cryptic: The Computer Game!"
+    r"|\blive\s+stream\b"  # livestream episodes
+    r"|\basmr\b",  # ASMR videos
     re.IGNORECASE,
 )
 
@@ -341,18 +362,17 @@ _PUZZLE_VOCAB_RE = re.compile(
 
 
 def is_puzzle_video(title: str, description: str = "") -> bool:
-    """Return True if this looks like a logic/pencil puzzle video.
+    """Return True if this looks like a puzzle video worth including.
 
-    Keeps sudoku, non-standard logic puzzles (Nurikabe, Star Battle, etc.),
-    and any video with a SudokuPad/f-puzzles link.
-
-    Rejects crosswords, Wordle, spelling bees, and video-game streams.
+    Keeps sudoku, pencil puzzles, crosswords, and any video with a SudokuPad link.
+    Rejects channel meta-content (podcasts, movies, ASMR) and non-puzzle word games
+    (Wordle, Spelling Bee, Connections, etc.).
 
     Decision order:
     1. Puzzle URL in description → always keep.
-    2. Hard-reject title pattern (crossword, wordle) → always filter.
-    3. Soft-reject title pattern (Experts Play, Blue Prince) → filter unless
-       the boilerplate-stripped description contains logic-puzzle vocabulary.
+    2. Hard-reject title pattern → always filter.
+    3. Soft-reject title pattern (Experts Play) → filter unless description has
+       logic-puzzle vocabulary.
     4. Otherwise → keep.
     """
     description = description or ""

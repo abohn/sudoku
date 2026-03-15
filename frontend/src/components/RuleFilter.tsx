@@ -96,8 +96,9 @@ export default function RuleFilter({
   const [showOccasionalSudoku, setShowOccasionalSudoku] = useState(false);
   const [showOccasionalPencil, setShowOccasionalPencil] = useState(false);
 
-  const sudokuRules = rules.filter((r) => r.category !== "pencil");
+  const sudokuRules = rules.filter((r) => r.category === "sudoku");
   const pencilRules = rules.filter((r) => r.category === "pencil");
+  const wordRules = rules.filter((r) => r.category === "word");
 
   const frequentSudoku = sudokuRules.filter((r) => r.video_count > FREQUENT_THRESHOLD);
   const occasionalSudoku = sudokuRules.filter(
@@ -213,6 +214,26 @@ export default function RuleFilter({
             </div>
           )}
         </div>
+
+        {/* ---- Word Puzzles ---- */}
+        {wordRules.length > 0 && (
+          <div className="sidebar-pencil rounded-xl border p-3">
+            <h2 className="sidebar-pencil-header text-[11px] font-semibold uppercase tracking-wider mb-2">
+              Word Puzzles
+            </h2>
+            <div className="flex flex-wrap gap-1.5">
+              {wordRules.map((rule) => (
+                <RuleTag
+                  key={rule.slug}
+                  rule={rule}
+                  selected={selected.includes(rule.slug)}
+                  onClick={() => onToggle(rule.slug)}
+                  activeClass="bg-teal-600 text-white"
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ---- Pencil Puzzles ---- */}
         {pencilRules.length > 0 && (

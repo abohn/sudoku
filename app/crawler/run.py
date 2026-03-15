@@ -117,11 +117,15 @@ def _ensure_sudokupad_cached(cache: CrawlCache, youtube_id: str, puzzle_url: str
         cache.put_sudokupad(youtube_id, rules_text="", raw_keys=[], cages=[], author="")
 
 
-def attach_rules(db: Session, video: Video, cache: CrawlCache, youtube_id: str, description: str):
+def attach_rules(
+    db: Session, video: Video, cache: CrawlCache, youtube_id: str, description: str, title: str = ""
+):
     """Parse rules from cached data and link them to the video.
 
     Uses SudokuPad metadata.rules + structural detection when available.
-    Falls back to the YouTube description if SudokuPad had nothing useful.
+    Falls back to the YouTube description (+ title) if SudokuPad had nothing useful.
+    The title is passed through to parse_rules so that word-puzzle types detected
+    from titles (e.g. crossword, meta-puzzle) are captured.
     """
     db.query(VideoRule).filter(VideoRule.video_id == video.id).delete()
 
@@ -136,7 +140,7 @@ def attach_rules(db: Session, video: Video, cache: CrawlCache, youtube_id: str, 
         matches = []
 
     if not matches:
-        matches = parse_rules(description)
+        matches = parse_rules(description, title=title)
 
     for match in matches:
         rule = db.query(Rule).filter(Rule.slug == match.slug).first()
@@ -171,7 +175,7 @@ def _reprocess(cache: CrawlCache):
             continue
         video.solver_name = extract_solver(title, description)
         video.source_name = extract_source(description)
-        attach_rules(db, video, cache, youtube_id, description)
+        attach_rules(db, video, cache, youtube_id, description, title=title)
         if i % 100 == 0:
             db.commit()
             print(f"    {i}/{len(entries)} committed")
@@ -191,6 +195,7 @@ def _run_migrations():
         for stmt in [
             "ALTER TABLE videos ADD COLUMN solver_name VARCHAR(100)",
             "ALTER TABLE videos ADD COLUMN source_name VARCHAR(200)",
+            "ALTER TABLE rules ADD COLUMN category VARCHAR(50) DEFAULT 'sudoku'",
         ]:
             try:
                 conn.execute(text(stmt))
@@ -312,7 +317,7 @@ def crawl(
             video.difficulty_score = difficulty
             video.popularity_score = popularity
 
-            attach_rules(db, video, cache, youtube_id, desc)
+            attach_rules(db, video, cache, youtube_id, desc, title=title)
 
         db.commit()
         cache.flush()

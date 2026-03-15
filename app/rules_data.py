@@ -11,6 +11,37 @@ the rule from incidental uses of the same word (e.g. "arrow" alone vs.
 """
 
 RULE_DEFINITIONS: list[dict] = [
+    # ---- Word puzzles (category: word) ----
+    # Matched against video title (not description), so patterns should be broad
+    # but unambiguous. "crossword" is always a crossword; "cryptic" alone is too
+    # ambiguous (also used in "cryptic sudoku"), so we require newspaper context
+    # or the explicit word "crossword".
+    {
+        "slug": "cryptic-crossword",
+        "display_name": "Cryptic Crossword",
+        "category": "word",
+        "title_only": True,  # CTC descriptions mention crosswords promotionally; title is reliable
+        "description": "British-style crossword where each clue is a wordplay puzzle.",
+        "patterns": [
+            r"\bcrossword\b",
+            r"\bguardian\s+cryptic\b",
+            r"\btimes\s+(?:cryptic|masterclass)\b",
+            r"\bquick\s+cryptic\b",
+            r"\bspeedrun.*cryptic\b",
+            r"\bcryptic.*speedrun\b",
+        ],
+    },
+    {
+        "slug": "meta-puzzle",
+        "display_name": "Meta Puzzle",
+        "category": "word",
+        "title_only": True,
+        "description": "A puzzle whose completed solution yields a hidden meta-answer.",
+        "patterns": [
+            r"\bmeta[\s-](?:puzzle|crossword|conundrum)\b",
+            r"\bMGWCC\b",
+        ],
+    },
     # ---- Very common ----
     {
         "slug": "arrow",

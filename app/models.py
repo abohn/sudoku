@@ -55,6 +55,7 @@ class Rule(Base):
     display_name = Column(String(200), nullable=False)
     description = Column(Text)
     is_rare = Column(Boolean, default=False)  # True when <= 3 videos use it
+    category = Column(String(50), default="sudoku")  # "sudoku" | "pencil" | "word"
 
     videos = relationship("VideoRule", back_populates="rule")
 
