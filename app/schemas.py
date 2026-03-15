@@ -54,7 +54,6 @@ class VideoSummary(BaseModel):
     thumbnail_url: str | None
     puzzle_url: str | None
     setter_name: str | None
-    solver_name: str | None
     source_name: str | None
     puzzle_start_seconds: int | None
     solve_duration_seconds: int | None

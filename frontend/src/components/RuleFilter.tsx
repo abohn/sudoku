@@ -1,4 +1,4 @@
-import type { DifficultyLabel, MatchMode, Rule, Setter, Solver, Source } from "../types";
+import type { DifficultyLabel, MatchMode, Rule, Setter, Source } from "../types";
 import SetterFilter from "./SetterFilter";
 
 const DIFFICULTIES: { label: DifficultyLabel; display: string; activeCls: string }[] = [
@@ -27,9 +27,6 @@ interface Props {
   setters: Setter[];
   selectedSetter: string | null;
   onSelectSetter: (name: string | null) => void;
-  solvers: Solver[];
-  selectedSolver: string | null;
-  onSelectSolver: (name: string | null) => void;
   sources: Source[];
   selectedSource: string | null;
   onSelectSource: (name: string | null) => void;
@@ -82,9 +79,6 @@ export default function RuleFilter({
   setters,
   selectedSetter,
   onSelectSetter,
-  solvers,
-  selectedSolver,
-  onSelectSolver,
   sources,
   selectedSource,
   onSelectSource,
@@ -170,37 +164,6 @@ export default function RuleFilter({
               })}
             </div>
           </div>
-
-          {solvers.length > 0 && (
-            <div className="border-t border-th-border pt-3">
-              <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
-                Solver
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {solvers.map(({ name, count }) => {
-                  const active = selectedSolver === name;
-                  return (
-                    <button
-                      key={name}
-                      onClick={() => onSelectSolver(active ? null : name)}
-                      className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                        active
-                          ? "bg-indigo-600 text-white border-indigo-600"
-                          : "border-th-border text-th-text2 hover:bg-th-hover"
-                      }`}
-                    >
-                      {name}
-                      <span
-                        className={`ml-1 text-[10px] ${active ? "text-indigo-200" : "text-th-text3"}`}
-                      >
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {sources.length > 0 && (
             <div className="border-t border-th-border pt-3">

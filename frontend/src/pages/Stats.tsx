@@ -62,14 +62,6 @@ export default function Stats() {
     .slice(0, 10);
   const maxConstraintCount = topConstraints[0]?.count ?? 1;
 
-  // Solver breakdown
-  const solverCounts: Record<string, number> = {};
-  for (const v of allVideos) {
-    if (v.solver_name) solverCounts[v.solver_name] = (solverCounts[v.solver_name] ?? 0) + 1;
-  }
-  const solverEntries = Object.entries(solverCounts).sort((a, b) => b[1] - a[1]);
-  const maxSolverCount = solverEntries[0]?.[1] ?? 1;
-
   // Top 10 setters
   const setterCounts: Record<string, number> = {};
   for (const v of allVideos) {
@@ -219,28 +211,9 @@ export default function Stats() {
                 </div>
               </div>
 
-              {/* Solver breakdown */}
+              {/* Top setters */}
               <div className="bg-th-card rounded-xl border border-th-border p-4">
-                <h3 className="font-semibold text-sm text-th-text1 mb-3">Solver</h3>
-                <div className="space-y-1.5">
-                  {solverEntries.map(([name, count]) => (
-                    <div key={name} className="flex items-center gap-2">
-                      <span className="text-[11px] text-th-text2 w-12 shrink-0">{name}</span>
-                      <div className="flex-1 bg-th-hover rounded-full h-1.5">
-                        <div
-                          className="bg-blue-400 h-1.5 rounded-full"
-                          style={{ width: `${Math.round((count / maxSolverCount) * 100)}%` }}
-                        />
-                      </div>
-                      <span className="text-[11px] text-th-text3 w-10 text-right shrink-0">
-                        {count.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Top 10 setters */}
-                <h3 className="font-semibold text-sm text-th-text1 mt-5 mb-3">Top setters</h3>
+                <h3 className="font-semibold text-sm text-th-text1 mb-3">Top setters</h3>
                 <div className="space-y-1.5">
                   {topSetters.map(([name, count]) => (
                     <div key={name} className="flex items-center gap-2">

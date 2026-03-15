@@ -9,7 +9,6 @@ import type {
   PaginatedVideos,
   Rule,
   Setter,
-  Solver,
   Source,
   SortOption,
   SortOrder,
@@ -21,7 +20,6 @@ interface StaticData {
   videos: VideoSummary[];
   rules: Rule[];
   setters: Setter[];
-  solvers: Solver[];
   sources: Source[];
 }
 
@@ -54,11 +52,6 @@ export async function fetchSetters(): Promise<Setter[]> {
   return setters;
 }
 
-export async function fetchSolvers(): Promise<Solver[]> {
-  const data = await loadData();
-  return data.solvers ?? [];
-}
-
 export async function fetchSources(): Promise<Source[]> {
   const data = await loadData();
   return data.sources ?? [];
@@ -76,7 +69,6 @@ export async function fetchPuzzles(params: {
   order?: SortOrder;
   has_puzzle_url?: boolean;
   setter?: string;
-  solver?: string;
   source?: string;
   difficulties?: DifficultyLabel[];
   searchQuery?: string;
@@ -93,7 +85,6 @@ export async function fetchPuzzles(params: {
     order = "desc",
     has_puzzle_url,
     setter,
-    solver,
     source,
     difficulties = [],
     searchQuery = "",
@@ -124,10 +115,6 @@ export async function fetchPuzzles(params: {
     items = items.filter((v) => v.setter_name === setter);
   }
 
-  if (solver) {
-    items = items.filter((v) => v.solver_name === solver);
-  }
-
   if (source) {
     items = items.filter((v) => v.source_name === source);
   }
@@ -151,7 +138,6 @@ export async function fetchPuzzles(params: {
       (v) =>
         v.title.toLowerCase().includes(q) ||
         (v.setter_name?.toLowerCase().includes(q) ?? false) ||
-        (v.solver_name?.toLowerCase().includes(q) ?? false) ||
         v.rules.some((vr) => vr.rule.display_name.toLowerCase().includes(q))
     );
   }
