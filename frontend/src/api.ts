@@ -83,6 +83,8 @@ export async function fetchPuzzles(params: {
   solveTime?: string;
   watchlistOnly?: boolean;
   watchlistIds?: Set<string>;
+  completedOnly?: boolean;
+  completedMap?: Record<string, { completedAt: string }>;
   page?: number;
   per_page?: number;
 }): Promise<PaginatedVideos> {
@@ -100,6 +102,8 @@ export async function fetchPuzzles(params: {
     solveTime,
     watchlistOnly = false,
     watchlistIds,
+    completedOnly = false,
+    completedMap,
     page = 1,
     per_page = 24,
   } = params;
@@ -169,6 +173,29 @@ export async function fetchPuzzles(params: {
 
   if (watchlistOnly && watchlistIds) {
     items = items.filter((v) => watchlistIds.has(v.youtube_id));
+  }
+
+  if (completedOnly && completedMap) {
+    items = items.filter((v) => v.youtube_id in completedMap);
+    // Sort by completion date descending, overriding the regular sort
+    items = [...items].sort((a, b) => {
+      const da = completedMap[a.youtube_id]?.completedAt ?? "";
+      const db = completedMap[b.youtube_id]?.completedAt ?? "";
+      return db.localeCompare(da);
+    });
+    const total = items.length;
+    const pages = Math.max(1, Math.ceil(total / per_page));
+    const offset = (page - 1) * per_page;
+    const { histogram, granularity } = buildHistogram(items);
+    return {
+      items: items.slice(offset, offset + per_page),
+      total,
+      page,
+      per_page,
+      pages,
+      histogram,
+      granularity,
+    };
   }
 
   items = [...items].sort((a, b) => {

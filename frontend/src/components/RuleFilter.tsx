@@ -39,6 +39,8 @@ interface Props {
   onSolveTimeChange: (v: string | null) => void;
   watchlistOnly: boolean;
   onWatchlistOnlyChange: (v: boolean) => void;
+  completedOnly: boolean;
+  onCompletedOnlyChange: (v: boolean) => void;
   collections: Collection[];
   selectedCollection: string | null;
   onSelectCollection: (slug: string | null) => void;
@@ -95,6 +97,8 @@ export default function RuleFilter({
   onSolveTimeChange,
   watchlistOnly,
   onWatchlistOnlyChange,
+  completedOnly,
+  onCompletedOnlyChange,
   collections,
   selectedCollection,
   onSelectCollection,
@@ -138,6 +142,15 @@ export default function RuleFilter({
               className="rounded accent-indigo-600"
             />
             <span>Saved only</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm text-th-text2 cursor-pointer select-none mt-1.5">
+            <input
+              type="checkbox"
+              checked={completedOnly}
+              onChange={(e) => onCompletedOnlyChange(e.target.checked)}
+              className="rounded accent-indigo-600"
+            />
+            <span>Completed only</span>
           </label>
         </div>
 

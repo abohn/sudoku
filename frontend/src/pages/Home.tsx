@@ -41,6 +41,7 @@ export default function Home() {
     []) as DifficultyLabel[];
   const solveTime = searchParams.get("solve") ?? undefined;
   const watchlistOnly = searchParams.get("watchlist") === "1";
+  const completedOnly = searchParams.get("done") === "1";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 
   const selectedSource = searchParams.get("source") ?? null;
@@ -98,7 +99,8 @@ export default function Home() {
     (selectedCollection ? 1 : 0) +
     (searchQuery ? 1 : 0) +
     (solveTime ? 1 : 0) +
-    (watchlistOnly ? 1 : 0);
+    (watchlistOnly ? 1 : 0) +
+    (completedOnly ? 1 : 0);
 
   useEffect(() => {
     fetchRules()
@@ -134,6 +136,8 @@ export default function Home() {
           solveTime,
           watchlistOnly,
           watchlistIds: watchlist,
+          completedOnly,
+          completedMap: completed,
           page: p,
           per_page: PER_PAGE,
         });
@@ -167,6 +171,8 @@ export default function Home() {
         solveTime,
         watchlistOnly,
         watchlistIds: watchlist,
+        completedOnly,
+        completedMap: completed,
         page: 1,
         per_page: 9999,
       });
@@ -381,6 +387,8 @@ export default function Home() {
             onSolveTimeChange={(v) => setParam("solve", v)}
             watchlistOnly={watchlistOnly}
             onWatchlistOnlyChange={(v) => setParam("watchlist", v ? "1" : null)}
+            completedOnly={completedOnly}
+            onCompletedOnlyChange={(v) => setParam("done", v ? "1" : null)}
             collections={collections}
             selectedCollection={selectedCollection}
             onSelectCollection={(slug) => setParam("collection", slug)}
