@@ -362,7 +362,7 @@ export default function Stats() {
 
   return (
     <div className="min-h-screen bg-th-bg">
-      <header className="bg-th-card border-b border-th-border sticky top-0 z-10">
+      <header className="bg-th-card border-b border-th-border sticky top-0 z-10 shadow-md">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-4">
           <Link to="/" className="text-sm text-blue-600 hover:underline">
             ← Back

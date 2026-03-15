@@ -255,7 +255,7 @@ export default function Home() {
       )}
 
       {/* Header */}
-      <header className="bg-th-card border-b border-th-border sticky top-0 z-10">
+      <header className="bg-th-card border-b border-th-border sticky top-0 z-10 shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-1 h-8 rounded-full bg-indigo-500 hidden sm:block" />
