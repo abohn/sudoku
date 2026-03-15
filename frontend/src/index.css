@@ -104,13 +104,13 @@ html.warm {
   color: var(--sidebar-sudoku-sublabel);
 }
 
-/* Rule tags inside themed sidebar sections */
-.sidebar-pencil .rule-tag,
-.sidebar-sudoku .rule-tag {
+/* Rule tags inside themed sidebar sections — only unselected tags get the theme override */
+.sidebar-pencil .rule-tag:not([data-selected="true"]),
+.sidebar-sudoku .rule-tag:not([data-selected="true"]) {
   background-color: var(--th-card);
   color: var(--th-text1);
 }
-.sidebar-pencil .rule-tag:hover,
-.sidebar-sudoku .rule-tag:hover {
+.sidebar-pencil .rule-tag:not([data-selected="true"]):hover,
+.sidebar-sudoku .rule-tag:not([data-selected="true"]):hover {
   background-color: var(--th-hover);
 }

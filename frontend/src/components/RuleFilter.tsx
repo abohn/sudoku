@@ -56,6 +56,7 @@ export function RuleTag({
     <button
       onClick={onClick}
       title={rule.description ?? undefined}
+      data-selected={selected ? "true" : undefined}
       className={`rule-tag inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors
         ${selected ? activeClass : "bg-th-card text-th-text1 hover:bg-th-hover"}
         ${onClick ? "cursor-pointer" : "cursor-default"}`}
@@ -255,9 +256,6 @@ export default function RuleFilter({
             )}
             {rarePencil.length > 0 && showOccasionalPencil && (
               <div className="border-t border-th-border mt-2 pt-2">
-                <p className="sidebar-sudoku-sublabel text-[10px] font-semibold uppercase tracking-wider mb-1.5">
-                  Rare
-                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {rarePencil.map((rule) => (
                     <RuleTag
@@ -322,9 +320,6 @@ export default function RuleFilter({
             <>
               {showOccasionalSudoku && (
                 <div className="sidebar-sudoku-divider border-t pt-2 mb-1">
-                  <p className="sidebar-sudoku-sublabel text-[10px] font-semibold uppercase tracking-wider mb-1.5">
-                    Less common
-                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {occasionalSudoku.map((rule) => (
                       <RuleTag
@@ -348,9 +343,6 @@ export default function RuleFilter({
 
           {rareSudoku.length > 0 && showOccasionalSudoku && (
             <div className="sidebar-sudoku-divider border-t pt-2 mt-2">
-              <p className="sidebar-sudoku-sublabel text-[10px] font-semibold uppercase tracking-wider mb-1.5">
-                Rare / Unique
-              </p>
               <div className="flex flex-wrap gap-1.5">
                 {rareSudoku.map((rule) => (
                   <RuleTag
