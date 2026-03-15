@@ -336,6 +336,152 @@ RULE_DEFINITIONS: list[dict] = [
             r"\banti.?knight[^.!?\n]{0,80}\banti.?king[^.!?\n]{0,80}\bnon.?consecutive\b",
         ],
     },
+    {
+        "slug": "yin-yang",
+        "display_name": "Yin Yang",
+        "description": "Shade cells so shaded and unshaded cells each form a single connected group, with no 2×2 area fully shaded or unshaded.",
+        "patterns": [
+            r"\byin.?yang\b",
+        ],
+    },
+    {
+        "slug": "chaos-construction",
+        "display_name": "Chaos Construction",
+        "description": "The solver must deduce the region boundaries as part of solving the puzzle.",
+        "patterns": [
+            r"\bchaos construction\b",
+            r"\bregions?[^.!?\n]{0,60}\bmust (?:be )?(?:determin|deduc|find)\b",
+        ],
+    },
+    {
+        "slug": "inequality",
+        "display_name": "Inequality",
+        "description": "Inequality signs between adjacent cells indicate which cell contains the larger digit.",
+        "patterns": [
+            r"\binequality sign\b",
+            r"\binequality[^.!?\n]{0,60}\b(?:point|cell|between|smaller|larger)\b",
+            r"\bgreater than[^.!?\n]{0,60}\b(?:sign|cell|constraint|clue)\b",
+            r"\b(?:point|sign)[^.!?\n]{0,40}\b(?:smaller|larger) digit\b",
+        ],
+    },
+    {
+        "slug": "quadruple",
+        "display_name": "Quadruple",
+        "description": "A clue in the corner of four cells lists digits that must appear among those four cells.",
+        "patterns": [
+            r"\bquadruple\b",
+        ],
+    },
+    {
+        "slug": "parity-lines",
+        "display_name": "Parity Lines",
+        "description": "Digits along a parity line must strictly alternate between odd and even.",
+        "patterns": [
+            r"\bparity lines?\b",
+            r"\bparity[^.!?\n]{0,60}\balternat\b",
+            r"\balternat[^.!?\n]{0,60}\b(?:odd|even)[^.!?\n]{0,60}\bline\b",
+        ],
+    },
+    {
+        "slug": "snake",
+        "display_name": "Snake",
+        "description": "Shade cells to form a one-cell-wide snake (connected path) satisfying given constraints.",
+        "patterns": [
+            r"\bsnake egg\b",
+            r"\bform a snake\b",
+            r"\bone.cell.wide[^.!?\n]{0,60}\bsnake\b",
+            r"\bsnake[^.!?\n]{0,60}\bone.cell.wide\b",
+        ],
+    },
+    {
+        "slug": "equal-sums",
+        "display_name": "Equal Sums",
+        "description": "Multiple groups or regions must have the same total sum.",
+        "patterns": [
+            r"\bequal sums?\b",
+        ],
+    },
+    {
+        "slug": "consecutive",
+        "display_name": "Consecutive",
+        "description": "Marked pairs of adjacent cells must contain consecutive digits.",
+        # Avoid matching "nonconsecutive" / "non-consecutive" contexts by requiring
+        # a following noun or a positive verb form ("are/must be consecutive").
+        "patterns": [
+            r"\bconsecutive (?:dots?|pairs?|clue|constraint)\b",
+            r"\badjacent cells? (?:are|must be) consecutive\b",
+            r"\bmarked (?:as )?consecutive\b",
+            r"\bdots? (?:indicate|mark|show|denote) (?:that )?(?:adjacent )?cells? are consecutive\b",
+        ],
+    },
+    {
+        "slug": "ratio",
+        "display_name": "Ratio",
+        "description": "Marked pairs of adjacent cells must have a 1:2 ratio between them.",
+        "patterns": [
+            r"\bratio (?:dots?|clue|constraint|rule)\b",
+            r"\b1:2 ratio\b",
+            r"\bdots? (?:indicate|mark|denote) (?:a )?(?:1:2 )?ratio\b",
+            r"\bone cell (?:is )?(?:double|twice) (?:the other|its neighbou?r|adjacent)\b",
+            r"\bratio sudoku\b",
+        ],
+    },
+    {
+        "slug": "sequence",
+        "display_name": "Sequence",
+        "description": "Digits on a line form a set of consecutive digits in any order (a sequence line).",
+        "patterns": [
+            r"\bsequence lines?\b",
+            r"\bsequence (?:constraint|clue|rule|sudoku)\b",
+        ],
+    },
+    {
+        "slug": "indexing",
+        "display_name": "Indexing",
+        "description": "A digit in a cell indicates the column (or row) in its row (or column) where a specific digit appears.",
+        "patterns": [
+            r"\bindexing\b",
+            r"\bindex(?:er|ing)? (?:digit|cell|column|row|clue|constraint)\b",
+            r"\bself.?referential\b",
+        ],
+    },
+    {
+        "slug": "liar",
+        "display_name": "Liar",
+        "description": "Exactly one clue in a given set is false; the rest are true.",
+        "patterns": [
+            r"\bliar\b",
+            r"\bone (?:of (?:the|each) )?(?:clue|constraint|rule)s? (?:is (?:false|a lie)|lies?)\b",
+        ],
+    },
+    {
+        "slug": "fortress",
+        "display_name": "Fortress",
+        "description": "Shaded cells must contain a digit greater than all orthogonally adjacent unshaded cells.",
+        "patterns": [
+            r"\bfortress\b",
+        ],
+    },
+    {
+        "slug": "windoku",
+        "display_name": "Windoku",
+        "description": "Four 3×3 windows at fixed positions act as extra boxes, each containing 1–9.",
+        "patterns": [
+            r"\bwindoku\b",
+            r"\bwindow sudoku\b",
+        ],
+    },
+    {
+        "slug": "toroidal",
+        "display_name": "Toroidal",
+        "description": "The grid wraps around — the top connects to the bottom and left connects to the right.",
+        "patterns": [
+            r"\btoroidal\b",
+            r"\bthe grid wraps\b",
+            r"\bwraps? around the (?:grid|board|edge)\b",
+            r"\btorus\b",
+        ],
+    },
     # ---- Catch-all for unlisted whisper variants ----
     {
         "slug": "whispers",
@@ -423,6 +569,20 @@ RULE_DEFINITIONS: list[dict] = [
         "description": "Divide the grid into 180°-rotationally-symmetric regions, each containing exactly one circle at its centre of symmetry.",
         "category": "pencil",
         "patterns": [r"\bspiral galaxi"],  # "spiral galaxy" / "spiral galaxies"
+    },
+    {
+        "slug": "japanese-sums",
+        "display_name": "Japanese Sums",
+        "description": "Clues outside the grid indicate the sums of runs of shaded cells in each row and column.",
+        "category": "pencil",
+        "patterns": [r"\bjapanese sums?\b"],
+    },
+    {
+        "slug": "cave",
+        "display_name": "Cave",
+        "description": "Shade cells so that the unshaded region forms a single connected cave; clues indicate visibility from that cell.",
+        "category": "pencil",
+        "patterns": [r"\bcave puzzle\b", r"\bcave sudoku\b", r"\bcave[^.!?\n]{0,60}\bshad\b"],
     },
     {
         "slug": "kakuro",
