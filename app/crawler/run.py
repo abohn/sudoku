@@ -218,7 +218,7 @@ def _crawl_playlists(db: Session, client: "YouTubeClient", channel_id: str):
             collection.youtube_playlist_id = pl["id"]
 
         print(f"  Playlist: {pl['title']!r} — fetching video IDs...")
-        video_ids = client.get_playlist_video_ids(pl["id"])
+        video_ids = list(dict.fromkeys(client.get_playlist_video_ids(pl["id"])))
         print(f"    {len(video_ids)} video(s) in playlist")
 
         # Clear existing memberships for this collection
