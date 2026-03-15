@@ -129,7 +129,7 @@ export default function RuleFilter({
               onChange={(e) => onWatchlistOnlyChange(e.target.checked)}
               className="rounded accent-indigo-600"
             />
-            <span>Watchlist only</span>
+            <span>Saved only</span>
           </label>
         </div>
 

@@ -83,7 +83,7 @@ export default function Help() {
               Filter to puzzles by a specific constructor, chosen from the dropdown at the bottom of
               the sidebar.
             </Row>
-            <Row label="Watchlist only">Show only puzzles you've saved to your watchlist.</Row>
+            <Row label="Saved only">Show only puzzles you've saved.</Row>
           </div>
         </Section>
 
@@ -135,8 +135,8 @@ export default function Help() {
           <div className="divide-y divide-th-border">
             <Row label="★ Favorite">Mark puzzles you love or want to remember.</Row>
             <Row label="Save / Saved">
-              Add to your watchlist — puzzles you want to solve later. Filter to just these with
-              "Watchlist only" in the sidebar.
+              Save puzzles you want to solve later. Filter to just these with "Saved only" in the
+              sidebar.
             </Row>
             <Row label="Completed">
               Mark a puzzle as solved. Use <strong>Hide completed</strong> (above the grid) to
