@@ -33,6 +33,7 @@ from app.crawler.rule_parser import (
     extract_puzzle_url,
     extract_setter,
     extract_solver,
+    extract_source,
     is_puzzle_video,
     parse_rules,
 )
@@ -169,6 +170,7 @@ def _reprocess(cache: CrawlCache):
         if not video:
             continue
         video.solver_name = extract_solver(title, description)
+        video.source_name = extract_source(description)
         attach_rules(db, video, cache, youtube_id, description)
         if i % 100 == 0:
             db.commit()
@@ -188,6 +190,7 @@ def _run_migrations():
     with engine.connect() as conn:
         for stmt in [
             "ALTER TABLE videos ADD COLUMN solver_name VARCHAR(100)",
+            "ALTER TABLE videos ADD COLUMN source_name VARCHAR(200)",
         ]:
             try:
                 conn.execute(text(stmt))
@@ -303,6 +306,7 @@ def crawl(
             video.puzzle_url = clean_str(puzzle_url)
             video.setter_name = clean_str(setter_name)
             video.solver_name = solver_name
+            video.source_name = extract_source(desc)
             video.puzzle_start_seconds = puzzle_start
             video.solve_duration_seconds = solve_duration
             video.difficulty_score = difficulty

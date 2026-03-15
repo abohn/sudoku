@@ -10,6 +10,7 @@ import type {
   Rule,
   Setter,
   Solver,
+  Source,
   SortOption,
   SortOrder,
   VideoSummary,
@@ -21,6 +22,7 @@ interface StaticData {
   rules: Rule[];
   setters: Setter[];
   solvers: Solver[];
+  sources: Source[];
 }
 
 const DIFFICULTY_RANGES: Record<DifficultyLabel, [number | null, number | null]> = {
@@ -57,6 +59,11 @@ export async function fetchSolvers(): Promise<Solver[]> {
   return data.solvers ?? [];
 }
 
+export async function fetchSources(): Promise<Source[]> {
+  const data = await loadData();
+  return data.sources ?? [];
+}
+
 export async function fetchAllVideos(): Promise<VideoSummary[]> {
   const { videos } = await loadData();
   return videos;
@@ -70,6 +77,7 @@ export async function fetchPuzzles(params: {
   has_puzzle_url?: boolean;
   setter?: string;
   solver?: string;
+  source?: string;
   difficulties?: DifficultyLabel[];
   searchQuery?: string;
   solveTime?: string;
@@ -86,6 +94,7 @@ export async function fetchPuzzles(params: {
     has_puzzle_url,
     setter,
     solver,
+    source,
     difficulties = [],
     searchQuery = "",
     solveTime,
@@ -117,6 +126,10 @@ export async function fetchPuzzles(params: {
 
   if (solver) {
     items = items.filter((v) => v.solver_name === solver);
+  }
+
+  if (source) {
+    items = items.filter((v) => v.source_name === source);
   }
 
   if (difficulties.length > 0) {

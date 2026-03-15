@@ -68,6 +68,7 @@ def export(output_path: str) -> None:
 
     setter_counts: dict[str, int] = {}
     solver_counts: dict[str, int] = {}
+    source_counts: dict[str, int] = {}
     videos_data = []
 
     for v in videos:
@@ -75,6 +76,8 @@ def export(output_path: str) -> None:
             setter_counts[v.setter_name] = setter_counts.get(v.setter_name, 0) + 1
         if v.solver_name:
             solver_counts[v.solver_name] = solver_counts.get(v.solver_name, 0) + 1
+        if v.source_name:
+            source_counts[v.source_name] = source_counts.get(v.source_name, 0) + 1
 
         videos_data.append(
             {
@@ -87,6 +90,7 @@ def export(output_path: str) -> None:
                 "puzzle_url": v.puzzle_url,
                 "setter_name": v.setter_name,
                 "solver_name": v.solver_name,
+                "source_name": v.source_name,
                 "puzzle_start_seconds": v.puzzle_start_seconds,
                 "solve_duration_seconds": v.solve_duration_seconds,
                 "difficulty_score": v.difficulty_score,
@@ -118,6 +122,10 @@ def export(output_path: str) -> None:
         {"name": name, "count": count}
         for name, count in sorted(solver_counts.items(), key=lambda x: -x[1])
     ]
+    sources = [
+        {"name": name, "count": count}
+        for name, count in sorted(source_counts.items(), key=lambda x: -x[1])
+    ]
 
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
@@ -125,6 +133,7 @@ def export(output_path: str) -> None:
         "rules": rules_data,
         "setters": setters,
         "solvers": solvers,
+        "sources": sources,
     }
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

@@ -375,6 +375,26 @@ def is_puzzle_video(title: str, description: str = "") -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Puzzle source detection
+# ---------------------------------------------------------------------------
+
+_SOURCE_PATTERNS: list[tuple[re.Pattern, str]] = [
+    (re.compile(r"logic-masters\.de", re.IGNORECASE), "Logic Masters"),
+    (re.compile(r"gmpuzzles\.com", re.IGNORECASE), "GM Puzzles"),
+]
+
+
+def extract_source(description: str) -> str | None:
+    """Detect the original publication source from URLs in the description."""
+    if not description:
+        return None
+    for pattern, name in _SOURCE_PATTERNS:
+        if pattern.search(description):
+            return name
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Difficulty scoring
 # ---------------------------------------------------------------------------
 

@@ -34,6 +34,7 @@ class Video(Base):
     puzzle_url = Column(String(1000))  # SudokuPad or f-puzzles URL
     setter_name = Column(String(200))  # parsed from title/description
     solver_name = Column(String(100))  # CTC host solving the puzzle (Simon, Mark, etc.)
+    source_name = Column(String(200))  # where the puzzle was published (e.g. Logic Masters)
     puzzle_start_seconds = Column(Integer)  # when solving actually begins (from chapters)
     solve_duration_seconds = Column(Integer)  # duration - puzzle_start_seconds
 

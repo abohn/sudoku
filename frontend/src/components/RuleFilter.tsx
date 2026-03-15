@@ -1,4 +1,4 @@
-import type { DifficultyLabel, MatchMode, Rule, Setter, Solver } from "../types";
+import type { DifficultyLabel, MatchMode, Rule, Setter, Solver, Source } from "../types";
 import SetterFilter from "./SetterFilter";
 
 const DIFFICULTIES: { label: DifficultyLabel; display: string; activeCls: string }[] = [
@@ -30,6 +30,9 @@ interface Props {
   solvers: Solver[];
   selectedSolver: string | null;
   onSelectSolver: (name: string | null) => void;
+  sources: Source[];
+  selectedSource: string | null;
+  onSelectSource: (name: string | null) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   solveTime: string | undefined;
@@ -82,6 +85,9 @@ export default function RuleFilter({
   solvers,
   selectedSolver,
   onSelectSolver,
+  sources,
+  selectedSource,
+  onSelectSource,
   searchQuery,
   onSearchChange,
   solveTime,
@@ -177,6 +183,37 @@ export default function RuleFilter({
                     <button
                       key={name}
                       onClick={() => onSelectSolver(active ? null : name)}
+                      className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                        active
+                          ? "bg-indigo-600 text-white border-indigo-600"
+                          : "border-th-border text-th-text2 hover:bg-th-hover"
+                      }`}
+                    >
+                      {name}
+                      <span
+                        className={`ml-1 text-[10px] ${active ? "text-indigo-200" : "text-th-text3"}`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {sources.length > 0 && (
+            <div className="border-t border-th-border pt-3">
+              <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
+                Source
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {sources.map(({ name, count }) => {
+                  const active = selectedSource === name;
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => onSelectSource(active ? null : name)}
                       className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
                         active
                           ? "bg-indigo-600 text-white border-indigo-600"

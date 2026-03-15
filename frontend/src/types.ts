@@ -24,6 +24,7 @@ export interface VideoSummary {
   puzzle_url: string | null;
   setter_name: string | null;
   solver_name: string | null;
+  source_name: string | null;
   puzzle_start_seconds: number | null;
   solve_duration_seconds: number | null;
   difficulty_score: number | null;
@@ -51,6 +52,11 @@ export interface Setter {
 }
 
 export interface Solver {
+  name: string;
+  count: number;
+}
+
+export interface Source {
   name: string;
   count: number;
 }
