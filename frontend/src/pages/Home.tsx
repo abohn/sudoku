@@ -494,7 +494,7 @@ export default function Home() {
                       <span
                         key={`s${i}`}
                         className="absolute top-0 w-px h-1.5 -translate-x-1/2 bg-th-text3 opacity-20"
-                        style={{ left: `${(i / (n - 1)) * 100}%` }}
+                        style={{ left: `${((i + 0.5) / n) * 100}%` }}
                       />
                     ))}
                     {yearTicks.map(({ i, label }) => (
@@ -502,7 +502,7 @@ export default function Home() {
                         key={i}
                         className={`absolute whitespace-nowrap text-th-text3 ${rotated ? "text-[8px]" : "text-[9px]"}`}
                         style={{
-                          left: `${(i / (n - 1)) * 100}%`,
+                          left: `${((i + 0.5) / n) * 100}%`,
                           ...(rotated
                             ? { transform: "rotate(-45deg)", transformOrigin: "right top" }
                             : { transform: "translateX(-50%)" }),
