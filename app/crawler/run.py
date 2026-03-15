@@ -23,6 +23,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import re
+
 from sqlalchemy.orm import Session
 
 from app.crawler.cache import CrawlCache
@@ -41,7 +43,7 @@ from app.crawler.sudokupad import fetch_puzzle_data, parse_rules_from_data
 from app.crawler.youtube import YouTubeClient
 from app.database import Base, SessionLocal, engine
 from app.main import seed_rules, update_rare_flags
-from app.models import Rule, Video, VideoRule
+from app.models import Collection, Rule, Video, VideoCollection, VideoRule
 
 
 def clean_str(s) -> str:
@@ -187,10 +189,61 @@ def _reprocess(cache: CrawlCache):
     print(f"Reprocess complete. {len(entries)} video(s) updated.")
 
 
+def _make_slug(title: str) -> str:
+    """Convert a playlist title to a URL-safe slug."""
+    slug = title.lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug)
+    return slug.strip("-")
+
+
+def _crawl_playlists(db: Session, client: "YouTubeClient", channel_id: str):
+    """Fetch all channel playlists and map their video IDs into video_collections."""
+    print("Fetching channel playlists...")
+    playlists = client.get_channel_playlists(channel_id)
+    print(f"  Found {len(playlists)} playlist(s)")
+
+    for pl in playlists:
+        slug = _make_slug(pl["title"])
+        collection = db.query(Collection).filter(Collection.slug == slug).first()
+        if not collection:
+            collection = Collection(
+                slug=slug,
+                display_name=pl["title"],
+                youtube_playlist_id=pl["id"],
+            )
+            db.add(collection)
+            db.flush()
+        else:
+            collection.display_name = pl["title"]
+            collection.youtube_playlist_id = pl["id"]
+
+        print(f"  Playlist: {pl['title']!r} — fetching video IDs...")
+        video_ids = client.get_playlist_video_ids(pl["id"])
+        print(f"    {len(video_ids)} video(s) in playlist")
+
+        # Clear existing memberships for this collection
+        db.query(VideoCollection).filter(VideoCollection.collection_id == collection.id).delete()
+
+        count = 0
+        for youtube_id in video_ids:
+            video = db.query(Video).filter(Video.youtube_id == youtube_id).first()
+            if not video:
+                continue
+            db.add(VideoCollection(video_id=video.id, collection_id=collection.id))
+            count += 1
+
+        collection.video_count = count
+        db.commit()
+        print(f"    Linked {count} known video(s)")
+
+    print(f"Playlist crawl complete. {len(playlists)} playlist(s) processed.")
+
+
 def _run_migrations():
     """Apply lightweight schema migrations for columns added after initial deploy."""
     from sqlalchemy import text
 
+    # New tables are created by Base.metadata.create_all; only add columns here.
     with engine.connect() as conn:
         for stmt in [
             "ALTER TABLE videos ADD COLUMN solver_name VARCHAR(100)",
@@ -209,6 +262,7 @@ def crawl(
     crawl_all: bool = False,
     limit: int = 0,
     reprocess: bool = False,
+    playlists: bool = False,
 ):
     os.makedirs("data", exist_ok=True)
     Base.metadata.create_all(bind=engine)
@@ -220,7 +274,7 @@ def crawl(
         _reprocess(cache)
         return
 
-    channel_id = os.environ.get("CTC_CHANNEL_ID", "@crackingthecryptic")
+    channel_id = os.environ.get("CTC_CHANNEL_ID", "UCedA79V1zMVMDwH0GWNBDBQ")
 
     published_after = None
     if not crawl_all and months_back > 0:
@@ -325,6 +379,11 @@ def crawl(
 
     update_rare_flags(db)
     db.commit()
+
+    if playlists:
+        client2 = YouTubeClient()
+        _crawl_playlists(db, client2, channel_id)
+
     db.close()
     cache.flush()
     print(f"\nCrawl complete. {total} video(s) processed.")
@@ -343,13 +402,36 @@ def main():
         action="store_true",
         help="Re-parse rules for all cached videos without any API calls",
     )
+    parser.add_argument(
+        "--playlists",
+        action="store_true",
+        help="Also fetch playlist memberships after the video crawl",
+    )
+    parser.add_argument(
+        "--playlists-only",
+        action="store_true",
+        dest="playlists_only",
+        help="Only update playlist memberships (skip video crawl)",
+    )
     args = parser.parse_args()
+
+    if args.playlists_only:
+        os.makedirs("data", exist_ok=True)
+        Base.metadata.create_all(bind=engine)
+        _run_migrations()
+        channel_id = os.environ.get("CTC_CHANNEL_ID", "UCedA79V1zMVMDwH0GWNBDBQ")
+        db = SessionLocal()
+        client = YouTubeClient()
+        _crawl_playlists(db, client, channel_id)
+        db.close()
+        return
 
     crawl(
         months_back=args.months,
         crawl_all=args.all,
         limit=args.limit,
         reprocess=args.reprocess,
+        playlists=args.playlists,
     )
 
 

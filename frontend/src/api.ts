@@ -3,6 +3,7 @@
  * filtering/sorting/pagination client-side so the app runs without a backend.
  */
 import type {
+  Collection,
   DifficultyLabel,
   HistogramBucket,
   MatchMode,
@@ -21,6 +22,7 @@ interface StaticData {
   rules: Rule[];
   setters: Setter[];
   sources: Source[];
+  collections: Collection[];
 }
 
 const DIFFICULTY_RANGES: Record<DifficultyLabel, [number | null, number | null]> = {
@@ -57,6 +59,11 @@ export async function fetchSources(): Promise<Source[]> {
   return data.sources ?? [];
 }
 
+export async function fetchCollections(): Promise<Collection[]> {
+  const data = await loadData();
+  return data.collections ?? [];
+}
+
 export async function fetchAllVideos(): Promise<VideoSummary[]> {
   const { videos } = await loadData();
   return videos;
@@ -70,6 +77,7 @@ export async function fetchPuzzles(params: {
   has_puzzle_url?: boolean;
   setter?: string;
   source?: string;
+  collection?: string;
   difficulties?: DifficultyLabel[];
   searchQuery?: string;
   solveTime?: string;
@@ -86,6 +94,7 @@ export async function fetchPuzzles(params: {
     has_puzzle_url,
     setter,
     source,
+    collection,
     difficulties = [],
     searchQuery = "",
     solveTime,
@@ -117,6 +126,10 @@ export async function fetchPuzzles(params: {
 
   if (source) {
     items = items.filter((v) => v.source_name === source);
+  }
+
+  if (collection) {
+    items = items.filter((v) => v.collections?.includes(collection));
   }
 
   if (difficulties.length > 0) {

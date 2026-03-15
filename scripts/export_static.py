@@ -22,7 +22,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Rule, Video, VideoRule
+from app.models import Collection, Rule, Video, VideoCollection, VideoRule
 from app.rules_data import RULE_DEFINITIONS
 
 _RULE_CATEGORY = {d["slug"]: d.get("category", "sudoku") for d in RULE_DEFINITIONS}
@@ -61,7 +61,10 @@ def export(output_path: str) -> None:
 
     videos = (
         db.query(Video)
-        .options(selectinload(Video.rules).selectinload(VideoRule.rule))
+        .options(
+            selectinload(Video.rules).selectinload(VideoRule.rule),
+            selectinload(Video.collections).selectinload(VideoCollection.collection),
+        )
         .order_by(Video.published_at.desc())
         .all()
     )
@@ -106,6 +109,7 @@ def export(output_path: str) -> None:
                     }
                     for vr in v.rules
                 ],
+                "collections": [vc.collection.slug for vc in v.collections],
             }
         )
 
@@ -119,12 +123,25 @@ def export(output_path: str) -> None:
         for name, count in sorted(source_counts.items(), key=lambda x: -x[1])
     ]
 
+    collections_data = [
+        {
+            "slug": c.slug,
+            "display_name": c.display_name,
+            "video_count": c.video_count,
+        }
+        for c in db.query(Collection)
+        .filter(Collection.video_count > 0)
+        .order_by(Collection.video_count.desc())
+        .all()
+    ]
+
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
         "videos": videos_data,
         "rules": rules_data,
         "setters": setters,
         "sources": sources,
+        "collections": collections_data,
     }
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

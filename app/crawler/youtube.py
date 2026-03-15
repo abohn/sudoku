@@ -98,6 +98,57 @@ class YouTubeClient:
         return video_ids
 
     # ------------------------------------------------------------------
+    # Playlist helpers
+    # ------------------------------------------------------------------
+
+    def get_channel_playlists(self, channel_id: str) -> list[dict]:
+        """Return list of {id, title} for all public playlists in the channel."""
+        playlists = []
+        page_token = None
+        while True:
+            params: dict = {
+                "part": "snippet",
+                "channelId": channel_id,
+                "maxResults": 50,
+            }
+            if page_token:
+                params["pageToken"] = page_token
+            resp = self._yt.playlists().list(**params).execute()
+            for item in resp.get("items", []):
+                playlists.append(
+                    {
+                        "id": item["id"],
+                        "title": item["snippet"]["title"],
+                    }
+                )
+            page_token = resp.get("nextPageToken")
+            if not page_token:
+                break
+        return playlists
+
+    def get_playlist_video_ids(self, playlist_id: str) -> list[str]:
+        """Return all video IDs in a playlist."""
+        video_ids: list[str] = []
+        page_token = None
+        while True:
+            params: dict = {
+                "part": "snippet",
+                "playlistId": playlist_id,
+                "maxResults": 50,
+            }
+            if page_token:
+                params["pageToken"] = page_token
+            resp = self._yt.playlistItems().list(**params).execute()
+            for item in resp.get("items", []):
+                vid_id = item["snippet"].get("resourceId", {}).get("videoId")
+                if vid_id:
+                    video_ids.append(vid_id)
+            page_token = resp.get("nextPageToken")
+            if not page_token:
+                break
+        return video_ids
+
+    # ------------------------------------------------------------------
     # Video detail fetching
     # ------------------------------------------------------------------
 

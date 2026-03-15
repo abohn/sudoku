@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { fetchPuzzles, fetchRules, fetchSetters, fetchSources } from "../api";
+import { fetchCollections, fetchPuzzles, fetchRules, fetchSetters, fetchSources } from "../api";
 import PuzzleCard from "../components/PuzzleCard";
 import RuleFilter from "../components/RuleFilter";
 import { useTheme } from "../context/ThemeContext";
 import type { Theme } from "../context/ThemeContext";
 import { useUserData } from "../hooks/useUserData";
 import type {
+  Collection,
   DifficultyLabel,
   MatchMode,
   PaginatedVideos,
@@ -43,10 +44,12 @@ export default function Home() {
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 
   const selectedSource = searchParams.get("source") ?? null;
+  const selectedCollection = searchParams.get("collection") ?? null;
 
   const [rules, setRules] = useState<Rule[]>([]);
   const [setters, setSetters] = useState<Setter[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [results, setResults] = useState<PaginatedVideos | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +95,7 @@ export default function Home() {
     selectedDifficulties.length +
     (selectedSetter ? 1 : 0) +
     (selectedSource ? 1 : 0) +
+    (selectedCollection ? 1 : 0) +
     (searchQuery ? 1 : 0) +
     (solveTime ? 1 : 0) +
     (watchlistOnly ? 1 : 0);
@@ -105,6 +109,9 @@ export default function Home() {
       .catch(() => {});
     fetchSources()
       .then(setSources)
+      .catch(() => {});
+    fetchCollections()
+      .then(setCollections)
       .catch(() => {});
   }, []);
 
@@ -121,6 +128,7 @@ export default function Home() {
           has_puzzle_url: hasPuzzleUrl,
           setter: selectedSetter ?? undefined,
           source: selectedSource ?? undefined,
+          collection: selectedCollection ?? undefined,
           difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
           searchQuery,
           solveTime,
@@ -153,6 +161,7 @@ export default function Home() {
         order,
         has_puzzle_url: hasPuzzleUrl,
         setter: selectedSetter ?? undefined,
+        collection: selectedCollection ?? undefined,
         difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
         searchQuery,
         solveTime,
@@ -372,6 +381,9 @@ export default function Home() {
             onSolveTimeChange={(v) => setParam("solve", v)}
             watchlistOnly={watchlistOnly}
             onWatchlistOnlyChange={(v) => setParam("watchlist", v ? "1" : null)}
+            collections={collections}
+            selectedCollection={selectedCollection}
+            onSelectCollection={(slug) => setParam("collection", slug)}
           />
         </div>
 

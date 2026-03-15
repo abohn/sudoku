@@ -45,6 +45,9 @@ class Video(Base):
     last_updated = Column(DateTime, default=datetime.utcnow)
 
     rules = relationship("VideoRule", back_populates="video", cascade="all, delete-orphan")
+    collections = relationship(
+        "VideoCollection", back_populates="video", cascade="all, delete-orphan"
+    )
 
 
 class Rule(Base):
@@ -73,3 +76,28 @@ class VideoRule(Base):
 
     video = relationship("Video", back_populates="rules")
     rule = relationship("Rule", back_populates="videos")
+
+
+class Collection(Base):
+    __tablename__ = "collections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String(100), unique=True, index=True, nullable=False)
+    display_name = Column(String(200), nullable=False)
+    youtube_playlist_id = Column(String(50))  # YT playlist ID for re-fetching
+    video_count = Column(Integer, default=0)
+
+    videos = relationship("VideoCollection", back_populates="collection")
+
+
+class VideoCollection(Base):
+    __tablename__ = "video_collections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    video_id = Column(Integer, ForeignKey("videos.id", ondelete="CASCADE"), nullable=False)
+    collection_id = Column(Integer, ForeignKey("collections.id"), nullable=False)
+
+    __table_args__ = (UniqueConstraint("video_id", "collection_id"),)
+
+    video = relationship("Video", back_populates="collections")
+    collection = relationship("Collection", back_populates="videos")

@@ -14,6 +14,12 @@ export interface VideoRule {
   matched_text: string | null;
 }
 
+export interface Collection {
+  slug: string;
+  display_name: string;
+  video_count: number;
+}
+
 export interface VideoSummary {
   id: number;
   youtube_id: string;
@@ -28,6 +34,7 @@ export interface VideoSummary {
   solve_duration_seconds: number | null;
   difficulty_score: number | null;
   rules: VideoRule[];
+  collections: string[];
 }
 
 export interface HistogramBucket {
