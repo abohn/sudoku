@@ -29,22 +29,38 @@ const DIFF_BAR_CLS: Record<string, string> = {
 
 const LINE_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
+function accumulate(series: Record<string, number>[], months: string[]): Record<string, number>[] {
+  return series.map((s) => {
+    let acc = 0;
+    const out: Record<string, number> = {};
+    for (const m of months) {
+      acc += s[m] ?? 0;
+      out[m] = acc;
+    }
+    return out;
+  });
+}
+
 function LineChart({
   months,
   series,
   labels,
+  cumulative = false,
 }: {
   months: string[];
   series: Record<string, number>[];
   labels: string[];
+  cumulative?: boolean;
 }) {
   if (months.length < 2) return null;
+  const displaySeries = cumulative ? accumulate(series, months) : series;
+
   const W = 800;
   const chartH = 90;
   const labelH = 18;
   const H = chartH + labelH;
 
-  const allValues = series.flatMap((s) => months.map((m) => s[m] ?? 0));
+  const allValues = displaySeries.flatMap((s) => months.map((m) => s[m] ?? 0));
   const maxVal = Math.max(...allValues, 1);
 
   const xOf = (i: number) => (i / (months.length - 1)) * W;
@@ -78,7 +94,7 @@ function LineChart({
             </text>
           </g>
         ))}
-        {series.map((s, idx) => {
+        {displaySeries.map((s, idx) => {
           const points = months.map((m, i) => `${xOf(i)},${yOf(s[m] ?? 0)}`).join(" ");
           return (
             <polyline
@@ -105,6 +121,33 @@ function LineChart({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ViewToggle({
+  cumulative,
+  onChange,
+}: {
+  cumulative: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex border border-th-border rounded overflow-hidden text-[10px]">
+      {(["Monthly", "Cumulative"] as const).map((label) => {
+        const active = (label === "Cumulative") === cumulative;
+        return (
+          <button
+            key={label}
+            onClick={() => onChange(label === "Cumulative")}
+            className={`px-2 py-0.5 transition-colors ${
+              active ? "bg-indigo-600 text-white" : "bg-th-card text-th-text3 hover:bg-th-hover"
+            }`}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -156,6 +199,7 @@ function RuleCategorySection({
   timeSeries: Record<string, Record<string, number>>;
   monthKeys: string[];
 }) {
+  const [cumulative, setCumulative] = useState(false);
   if (top.length === 0) return null;
   return (
     <div className="bg-th-card rounded-xl border border-th-border p-4 space-y-4">
@@ -178,11 +222,15 @@ function RuleCategorySection({
       </div>
       {topSeries.length > 0 && monthKeys.length > 1 && (
         <div className="border-t border-th-border pt-3">
-          <p className="text-[11px] text-th-text3 mb-2">Frequency over time</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] text-th-text3">Frequency over time</p>
+            <ViewToggle cumulative={cumulative} onChange={setCumulative} />
+          </div>
           <LineChart
             months={monthKeys}
             series={topSeries.map(({ slug }) => timeSeries[slug])}
             labels={topSeries.map(({ name }) => name)}
+            cumulative={cumulative}
           />
         </div>
       )}
@@ -301,6 +349,17 @@ export default function Stats() {
       ? userWithTime.reduce((sum, e) => sum + (e.rec.solveMinutes ?? 0), 0) / userWithTime.length
       : null;
 
+  const [ppmCumulative, setPpmCumulative] = useState(false);
+  const [setterCumulative, setSetterCumulative] = useState(false);
+
+  // Cumulative total for the puzzles-per-month line view
+  const cumulativeTotals: Record<string, number> = {};
+  let running = 0;
+  for (const m of monthKeys) {
+    running += videosByMonth[m] ?? 0;
+    cumulativeTotals[m] = running;
+  }
+
   return (
     <div className="min-h-screen bg-th-bg">
       <header className="bg-th-card border-b border-th-border sticky top-0 z-10">
@@ -320,38 +379,51 @@ export default function Stats() {
 
             {/* Puzzles per month */}
             <div className="bg-th-card rounded-xl border border-th-border p-4">
-              <h3 className="font-semibold text-sm text-th-text1 mb-4">
-                Puzzles per month — all {allVideos.length.toLocaleString()} videos
-              </h3>
-              <div className="flex items-end gap-px h-20">
-                {monthKeys.map((m) => {
-                  const count = videosByMonth[m] ?? 0;
-                  const pct = Math.round((count / maxVideosPerMonth) * 100);
-                  return (
-                    <div
-                      key={m}
-                      className="flex-1 bg-indigo-400 rounded-sm opacity-80 hover:opacity-100 transition-opacity"
-                      style={{ height: `${Math.max(pct, 2)}%` }}
-                      title={`${m}: ${count}`}
-                    />
-                  );
-                })}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-sm text-th-text1">
+                  Puzzles per month — all {allVideos.length.toLocaleString()} videos
+                </h3>
+                <ViewToggle cumulative={ppmCumulative} onChange={setPpmCumulative} />
               </div>
-              <div className="relative mt-1 h-4">
-                {monthKeys.map((m, i) => {
-                  if (!m.endsWith("-01")) return null;
-                  const pct = ((i + 0.5) / monthKeys.length) * 100;
-                  return (
-                    <span
-                      key={m}
-                      className="absolute text-[9px] text-th-text3 -translate-x-1/2"
-                      style={{ left: `${pct}%` }}
-                    >
-                      {m.slice(0, 4)}
-                    </span>
-                  );
-                })}
-              </div>
+              {ppmCumulative ? (
+                <LineChart
+                  months={monthKeys}
+                  series={[cumulativeTotals]}
+                  labels={["Total videos"]}
+                />
+              ) : (
+                <>
+                  <div className="flex items-end gap-px h-20">
+                    {monthKeys.map((m) => {
+                      const count = videosByMonth[m] ?? 0;
+                      const pct = Math.round((count / maxVideosPerMonth) * 100);
+                      return (
+                        <div
+                          key={m}
+                          className="flex-1 bg-indigo-400 rounded-sm opacity-80 hover:opacity-100 transition-opacity"
+                          style={{ height: `${Math.max(pct, 2)}%` }}
+                          title={`${m}: ${count}`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="relative mt-1 h-4">
+                    {monthKeys.map((m, i) => {
+                      if (!m.endsWith("-01")) return null;
+                      const pct = ((i + 0.5) / monthKeys.length) * 100;
+                      return (
+                        <span
+                          key={m}
+                          className="absolute text-[9px] text-th-text3 -translate-x-1/2"
+                          style={{ left: `${pct}%` }}
+                        >
+                          {m.slice(0, 4)}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Sudoku Constraints */}
@@ -402,11 +474,15 @@ export default function Stats() {
               </div>
               {top5SetterNames.length > 0 && monthKeys.length > 1 && (
                 <div className="border-t border-th-border pt-3">
-                  <p className="text-[11px] text-th-text3 mb-2">Frequency over time</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[11px] text-th-text3">Frequency over time</p>
+                    <ViewToggle cumulative={setterCumulative} onChange={setSetterCumulative} />
+                  </div>
                   <LineChart
                     months={monthKeys}
                     series={top5SetterNames.map((name) => setterTimeSeries[name])}
                     labels={top5SetterNames}
+                    cumulative={setterCumulative}
                   />
                 </div>
               )}
