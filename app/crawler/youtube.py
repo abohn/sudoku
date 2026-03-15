@@ -32,6 +32,25 @@ class YouTubeClient:
     # Channel helpers
     # ------------------------------------------------------------------
 
+    def resolve_channel_id(self, channel: str) -> str:
+        """Return the canonical UC... channel ID.
+
+        `channel` can be a channel ID (e.g. 'UCxxxx') or a handle (e.g. '@crackingthecryptic').
+        If it's already a UC... ID, returns it directly without an API call.
+        """
+        if channel.startswith("UC"):
+            return channel
+        params = (
+            {"part": "id", "forHandle": channel}
+            if channel.startswith("@")
+            else {"part": "id", "id": channel}
+        )
+        resp = self._yt.channels().list(**params).execute()
+        items = resp.get("items", [])
+        if not items:
+            raise ValueError(f"Channel not found: {channel}")
+        return items[0]["id"]
+
     def get_uploads_playlist_id(self, channel: str) -> str:
         """Return the uploads playlist ID for a channel.
 
@@ -102,7 +121,11 @@ class YouTubeClient:
     # ------------------------------------------------------------------
 
     def get_channel_playlists(self, channel_id: str) -> list[dict]:
-        """Return list of {id, title} for all public playlists in the channel."""
+        """Return list of {id, title} for all public playlists in the channel.
+
+        `channel_id` can be a UC... ID or a handle; it will be resolved automatically.
+        """
+        channel_id = self.resolve_channel_id(channel_id)
         playlists = []
         page_token = None
         while True:
