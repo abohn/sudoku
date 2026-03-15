@@ -1,5 +1,8 @@
+import { useState } from "react";
 import type { DifficultyLabel, MatchMode, Rule, Setter, Source } from "../types";
 import SetterFilter from "./SetterFilter";
+
+const FREQUENT_THRESHOLD = 20; // video_count above this → always shown
 
 const DIFFICULTIES: { label: DifficultyLabel; display: string; activeCls: string }[] = [
   { label: "easy", display: "Easy", activeCls: "bg-green-500 text-white border-green-500" },
@@ -89,10 +92,23 @@ export default function RuleFilter({
   watchlistOnly,
   onWatchlistOnlyChange,
 }: Props) {
+  const [showOccasionalSudoku, setShowOccasionalSudoku] = useState(false);
+  const [showOccasionalPencil, setShowOccasionalPencil] = useState(false);
+
   const sudokuRules = rules.filter((r) => r.category !== "pencil");
   const pencilRules = rules.filter((r) => r.category === "pencil");
-  const commonSudoku = sudokuRules.filter((r) => !r.is_rare);
+
+  const frequentSudoku = sudokuRules.filter((r) => r.video_count > FREQUENT_THRESHOLD);
+  const occasionalSudoku = sudokuRules.filter(
+    (r) => r.video_count > 3 && r.video_count <= FREQUENT_THRESHOLD
+  );
   const rareSudoku = sudokuRules.filter((r) => r.is_rare);
+
+  const frequentPencil = pencilRules.filter((r) => r.video_count > FREQUENT_THRESHOLD);
+  const occasionalPencil = pencilRules.filter(
+    (r) => r.video_count > 3 && r.video_count <= FREQUENT_THRESHOLD
+  );
+  const rarePencil = pencilRules.filter((r) => r.is_rare);
 
   return (
     <aside className="w-full lg:w-64 shrink-0">
@@ -204,7 +220,7 @@ export default function RuleFilter({
               Pencil Puzzles
             </h2>
             <div className="flex flex-wrap gap-1.5">
-              {pencilRules.map((rule) => (
+              {frequentPencil.map((rule) => (
                 <RuleTag
                   key={rule.slug}
                   rule={rule}
@@ -214,6 +230,47 @@ export default function RuleFilter({
                 />
               ))}
             </div>
+            {occasionalPencil.length > 0 && (
+              <>
+                {showOccasionalPencil && (
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {occasionalPencil.map((rule) => (
+                      <RuleTag
+                        key={rule.slug}
+                        rule={rule}
+                        selected={selected.includes(rule.slug)}
+                        onClick={() => onToggle(rule.slug)}
+                        activeClass="bg-amber-600 text-white"
+                      />
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowOccasionalPencil((v) => !v)}
+                  className="sidebar-sudoku-clear text-xs mt-2 hover:underline"
+                >
+                  {showOccasionalPencil ? "Show fewer" : `+${occasionalPencil.length} more`}
+                </button>
+              </>
+            )}
+            {rarePencil.length > 0 && showOccasionalPencil && (
+              <div className="border-t border-th-border mt-2 pt-2">
+                <p className="sidebar-sudoku-sublabel text-[10px] font-semibold uppercase tracking-wider mb-1.5">
+                  Rare
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {rarePencil.map((rule) => (
+                    <RuleTag
+                      key={rule.slug}
+                      rule={rule}
+                      selected={selected.includes(rule.slug)}
+                      onClick={() => onToggle(rule.slug)}
+                      activeClass="bg-amber-600 text-white"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -248,12 +305,9 @@ export default function RuleFilter({
             </div>
           )}
 
-          <div className="mb-3">
-            <p className="sidebar-sudoku-sublabel text-[10px] font-semibold uppercase tracking-wider mb-1.5">
-              Common
-            </p>
+          <div className="mb-1">
             <div className="flex flex-wrap gap-1.5">
-              {commonSudoku.map((rule) => (
+              {frequentSudoku.map((rule) => (
                 <RuleTag
                   key={rule.slug}
                   rule={rule}
@@ -264,8 +318,36 @@ export default function RuleFilter({
             </div>
           </div>
 
-          {rareSudoku.length > 0 && (
-            <div className="sidebar-sudoku-divider border-t pt-3">
+          {occasionalSudoku.length > 0 && (
+            <>
+              {showOccasionalSudoku && (
+                <div className="sidebar-sudoku-divider border-t pt-2 mb-1">
+                  <p className="sidebar-sudoku-sublabel text-[10px] font-semibold uppercase tracking-wider mb-1.5">
+                    Less common
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {occasionalSudoku.map((rule) => (
+                      <RuleTag
+                        key={rule.slug}
+                        rule={rule}
+                        selected={selected.includes(rule.slug)}
+                        onClick={() => onToggle(rule.slug)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={() => setShowOccasionalSudoku((v) => !v)}
+                className="sidebar-sudoku-clear text-xs mt-1 hover:underline"
+              >
+                {showOccasionalSudoku ? "Show fewer" : `+${occasionalSudoku.length} more`}
+              </button>
+            </>
+          )}
+
+          {rareSudoku.length > 0 && showOccasionalSudoku && (
+            <div className="sidebar-sudoku-divider border-t pt-2 mt-2">
               <p className="sidebar-sudoku-sublabel text-[10px] font-semibold uppercase tracking-wider mb-1.5">
                 Rare / Unique
               </p>
