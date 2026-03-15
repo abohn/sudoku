@@ -454,7 +454,7 @@ export default function Home() {
                 const yearOf = (p: string) => p.slice(0, 4);
 
                 // Labeled year ticks: every Q1 / January / year bar.
-                // Downsample to every-other-year only if there are > 10.
+                // Downsample evenly (stride 2 or 3) only when necessary; never rotate.
                 // Always pin first and last so there are ≥ 2 labels.
                 let yearTicks: { i: number; label: string }[] = [];
                 if (gran === "year") {
@@ -468,7 +468,8 @@ export default function Home() {
                     if (period.endsWith("-01")) yearTicks.push({ i, label: yearOf(period) });
                   });
                 }
-                if (yearTicks.length > 10) yearTicks = yearTicks.filter((_, idx) => idx % 2 === 0);
+                const stride = yearTicks.length > 20 ? 3 : yearTicks.length > 10 ? 2 : 1;
+                if (stride > 1) yearTicks = yearTicks.filter((_, idx) => idx % stride === 0);
                 if (!yearTicks.some((t) => t.i === 0))
                   yearTicks.unshift({ i: 0, label: yearOf(hist[0].period) });
                 if (!yearTicks.some((t) => t.i === n - 1))
@@ -487,9 +488,8 @@ export default function Home() {
                   });
                 }
 
-                const rotated = yearTicks.length > 8;
                 return (
-                  <div className={`relative mt-1 ${rotated ? "h-6" : "h-4"}`}>
+                  <div className="relative mt-1 h-4">
                     {subTicks.map((i) => (
                       <span
                         key={`s${i}`}
@@ -500,13 +500,8 @@ export default function Home() {
                     {yearTicks.map(({ i, label }) => (
                       <span
                         key={i}
-                        className={`absolute whitespace-nowrap text-th-text3 ${rotated ? "text-[8px]" : "text-[9px]"}`}
-                        style={{
-                          left: `${((i + 0.5) / n) * 100}%`,
-                          ...(rotated
-                            ? { transform: "rotate(-45deg)", transformOrigin: "right top" }
-                            : { transform: "translateX(-50%)" }),
-                        }}
+                        className="absolute whitespace-nowrap text-[9px] text-th-text3 -translate-x-1/2"
+                        style={{ left: `${((i + 0.5) / n) * 100}%` }}
                       >
                         {label}
                       </span>
