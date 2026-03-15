@@ -221,38 +221,6 @@ export default function RuleFilter({
           )}
         </div>
 
-        {/* ---- Collections ---- */}
-        {collections.length > 0 && (
-          <div className="bg-th-card rounded-xl border border-th-border p-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-th-text3 mb-2">
-              Collections
-            </h2>
-            <div className="flex flex-col gap-1">
-              {collections.map(({ slug, display_name, video_count }) => {
-                const active = selectedCollection === slug;
-                return (
-                  <button
-                    key={slug}
-                    onClick={() => onSelectCollection(active ? null : slug)}
-                    className={`flex items-center justify-between w-full text-left text-xs px-2 py-1 rounded-lg border transition-colors ${
-                      active
-                        ? "bg-violet-600 text-white border-violet-600"
-                        : "border-th-border text-th-text2 hover:bg-th-hover"
-                    }`}
-                  >
-                    <span className="truncate">{display_name}</span>
-                    <span
-                      className={`ml-2 shrink-0 text-[10px] ${active ? "text-violet-200" : "text-th-text3"}`}
-                    >
-                      {video_count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* ---- Word Puzzles ---- */}
         {wordRules.length > 0 && (
           <div className="sidebar-pencil rounded-xl border p-3">
@@ -418,6 +386,38 @@ export default function RuleFilter({
 
         {/* ---- Setter ---- */}
         <SetterFilter setters={setters} selected={selectedSetter} onSelect={onSelectSetter} />
+
+        {/* ---- Collections ---- */}
+        {collections.length > 0 && (
+          <div className="bg-th-card rounded-xl border border-th-border p-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-th-text3 mb-2">
+              Collections
+            </h2>
+            <div className="flex flex-col gap-1">
+              {collections.map(({ slug, display_name, video_count }) => {
+                const active = selectedCollection === slug;
+                return (
+                  <button
+                    key={slug}
+                    onClick={() => onSelectCollection(active ? null : slug)}
+                    className={`flex items-center justify-between w-full text-left text-xs px-2 py-1 rounded-lg border transition-colors ${
+                      active
+                        ? "bg-violet-600 text-white border-violet-600"
+                        : "border-th-border text-th-text2 hover:bg-th-hover"
+                    }`}
+                  >
+                    <span className="truncate">{display_name}</span>
+                    <span
+                      className={`ml-2 shrink-0 text-[10px] ${active ? "text-violet-200" : "text-th-text3"}`}
+                    >
+                      {video_count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );
