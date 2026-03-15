@@ -48,6 +48,8 @@ interface Props {
   collections: Collection[];
   selectedCollection: string | null;
   onSelectCollection: (slug: string | null) => void;
+  selectedCategory: "sudoku" | "pencil" | "word" | null;
+  onSelectCategory: (cat: "sudoku" | "pencil" | "word" | null) => void;
 }
 
 export function RuleTag({
@@ -110,6 +112,8 @@ export default function RuleFilter({
   collections,
   selectedCollection,
   onSelectCollection,
+  selectedCategory,
+  onSelectCategory,
 }: Props) {
   const [showOccasionalSudoku, setShowOccasionalSudoku] = useState(false);
   const [showOccasionalPencil, setShowOccasionalPencil] = useState(false);
@@ -258,9 +262,21 @@ export default function RuleFilter({
         {/* ---- Word Puzzles ---- */}
         {wordRules.length > 0 && (
           <div className="sidebar-word rounded-xl border p-3">
-            <h2 className="sidebar-word-header text-[11px] font-semibold uppercase tracking-wider mb-2">
-              Word Puzzles
-            </h2>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="sidebar-word-header text-[11px] font-semibold uppercase tracking-wider">
+                Word Puzzles
+              </h2>
+              <button
+                onClick={() => onSelectCategory(selectedCategory === "word" ? null : "word")}
+                className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors ${
+                  selectedCategory === "word"
+                    ? "bg-teal-600 text-white border-teal-600"
+                    : "sidebar-word-header border-current opacity-60 hover:opacity-100"
+                }`}
+              >
+                Only
+              </button>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {wordRules.map((rule) => (
                 <RuleTag
@@ -278,9 +294,21 @@ export default function RuleFilter({
         {/* ---- Pencil Puzzles ---- */}
         {pencilRules.length > 0 && (
           <div className="sidebar-pencil rounded-xl border p-3">
-            <h2 className="sidebar-pencil-header text-[11px] font-semibold uppercase tracking-wider mb-2">
-              Pencil Puzzles
-            </h2>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="sidebar-pencil-header text-[11px] font-semibold uppercase tracking-wider">
+                Pencil Puzzles
+              </h2>
+              <button
+                onClick={() => onSelectCategory(selectedCategory === "pencil" ? null : "pencil")}
+                className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors ${
+                  selectedCategory === "pencil"
+                    ? "bg-amber-600 text-white border-amber-600"
+                    : "sidebar-pencil-header border-current opacity-60 hover:opacity-100"
+                }`}
+              >
+                Only
+              </button>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {frequentPencil.map((rule) => (
                 <RuleTag
@@ -339,11 +367,23 @@ export default function RuleFilter({
             <h2 className="sidebar-sudoku-header text-[11px] font-semibold uppercase tracking-wider">
               Sudoku Rules
             </h2>
-            {selected.length > 0 && (
-              <button onClick={onClear} className="sidebar-sudoku-clear text-xs hover:underline">
-                Clear ({selected.length})
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onSelectCategory(selectedCategory === "sudoku" ? null : "sudoku")}
+                className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors ${
+                  selectedCategory === "sudoku"
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "sidebar-sudoku-clear border-current opacity-60 hover:opacity-100"
+                }`}
+              >
+                Only
               </button>
-            )}
+              {selected.length > 0 && (
+                <button onClick={onClear} className="sidebar-sudoku-clear text-xs hover:underline">
+                  Clear ({selected.length})
+                </button>
+              )}
+            </div>
           </div>
 
           {selected.length > 1 && (

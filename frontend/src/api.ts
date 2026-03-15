@@ -78,6 +78,7 @@ export async function fetchPuzzles(params: {
   setter?: string;
   source?: string;
   collection?: string;
+  category?: "sudoku" | "pencil" | "word";
   difficulties?: DifficultyLabel[];
   searchQuery?: string;
   solveTime?: string;
@@ -97,6 +98,7 @@ export async function fetchPuzzles(params: {
     setter,
     source,
     collection,
+    category,
     difficulties = [],
     searchQuery = "",
     solveTime,
@@ -134,6 +136,10 @@ export async function fetchPuzzles(params: {
 
   if (collection) {
     items = items.filter((v) => v.collections?.includes(collection));
+  }
+
+  if (category) {
+    items = items.filter((v) => v.rules.some((vr) => vr.rule.category === category));
   }
 
   if (difficulties.length > 0) {

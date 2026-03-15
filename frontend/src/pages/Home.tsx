@@ -46,6 +46,7 @@ export default function Home() {
 
   const selectedSource = searchParams.get("source") ?? null;
   const selectedCollection = searchParams.get("collection") ?? null;
+  const selectedCategory = (searchParams.get("cat") ?? null) as "sudoku" | "pencil" | "word" | null;
 
   const [rules, setRules] = useState<Rule[]>([]);
   const [setters, setSetters] = useState<Setter[]>([]);
@@ -100,7 +101,8 @@ export default function Home() {
     (searchQuery ? 1 : 0) +
     (solveTime ? 1 : 0) +
     (watchlistOnly ? 1 : 0) +
-    (completedOnly ? 1 : 0);
+    (completedOnly ? 1 : 0) +
+    (selectedCategory ? 1 : 0);
 
   useEffect(() => {
     fetchRules()
@@ -131,6 +133,7 @@ export default function Home() {
           setter: selectedSetter ?? undefined,
           source: selectedSource ?? undefined,
           collection: selectedCollection ?? undefined,
+          category: selectedCategory ?? undefined,
           difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
           searchQuery,
           solveTime,
@@ -166,6 +169,7 @@ export default function Home() {
         has_puzzle_url: hasPuzzleUrl,
         setter: selectedSetter ?? undefined,
         collection: selectedCollection ?? undefined,
+        category: selectedCategory ?? undefined,
         difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
         searchQuery,
         solveTime,
@@ -386,6 +390,8 @@ export default function Home() {
             collections={collections}
             selectedCollection={selectedCollection}
             onSelectCollection={(slug) => setParam("collection", slug)}
+            selectedCategory={selectedCategory}
+            onSelectCategory={(cat) => setParam("cat", cat)}
           />
         </div>
 
