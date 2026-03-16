@@ -137,6 +137,27 @@ npm install
 npm run dev                            # http://localhost:5173
 ```
 
+### Hiding non-puzzle videos
+
+Occasionally the CTC channel publishes videos that aren't puzzle solves (video game playthroughs, app promos, etc.). These can be hidden from the archive without deleting them from the database:
+
+```bash
+# Hide one or more videos by YouTube ID
+python -m app.crawler.manage hide <youtube_id> [<youtube_id> ...]
+
+# Undo a hide
+python -m app.crawler.manage unhide <youtube_id>
+
+# List all currently hidden videos
+python -m app.crawler.manage list-hidden
+```
+
+Hidden videos are excluded from `data.json` on the next export but remain in the database. Re-crawling will not un-hide them. After hiding, re-export:
+
+```bash
+python scripts/export_static.py
+```
+
 ### Full rebuild from scratch
 
 ```bash

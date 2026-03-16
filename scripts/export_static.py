@@ -61,6 +61,7 @@ def export(output_path: str) -> None:
 
     videos = (
         db.query(Video)
+        .filter(Video.is_hidden.is_(False))
         .options(
             selectinload(Video.rules).selectinload(VideoRule.rule),
             selectinload(Video.collections).selectinload(VideoCollection.collection),

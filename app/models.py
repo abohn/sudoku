@@ -42,6 +42,8 @@ class Video(Base):
     difficulty_score = Column(Float)  # 0.0–10.0 estimate
     popularity_score = Column(Float)  # normalized 0.0–10.0
 
+    is_hidden = Column(Boolean, default=False)  # manually excluded from export
+
     last_updated = Column(DateTime, default=datetime.utcnow)
 
     rules = relationship("VideoRule", back_populates="video", cascade="all, delete-orphan")
