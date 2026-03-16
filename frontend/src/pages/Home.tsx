@@ -77,6 +77,10 @@ export default function Home() {
     markCompleted,
     unmarkCompleted,
     toggleWatchlist,
+    exportData,
+    openImportPicker,
+    showBackupNudge,
+    needsBackupBanner,
   } = useUserData();
 
   function setParam(key: string, value: string | null) {
@@ -338,6 +342,23 @@ export default function Home() {
             >
               Feedback
             </a>
+            {/* Export / Import */}
+            <div className="flex border border-th-border rounded-lg overflow-hidden">
+              <button
+                onClick={exportData}
+                title="Export backup"
+                className="px-2.5 py-1.5 text-sm bg-th-card text-th-text2 hover:bg-th-hover transition-colors"
+              >
+                Export
+              </button>
+              <button
+                onClick={openImportPicker}
+                title="Import backup"
+                className="px-2.5 py-1.5 text-sm bg-th-card text-th-text2 hover:bg-th-hover transition-colors border-l border-th-border"
+              >
+                Import
+              </button>
+            </div>
             {/* Theme toggle */}
             <div className="flex border border-th-border rounded-lg overflow-hidden">
               {THEMES.map(({ id, label }) => (
@@ -358,6 +379,35 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Persistent backup banner */}
+      {needsBackupBanner && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-4 py-2 flex items-center justify-between gap-4">
+          <span>
+            Your completion data hasn't been backed up recently. Export a backup so you don't lose
+            it.
+          </span>
+          <button
+            onClick={exportData}
+            className="shrink-0 px-3 py-1 rounded-lg bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 transition-colors"
+          >
+            Export now
+          </button>
+        </div>
+      )}
+
+      {/* Post-completion backup nudge toast */}
+      {showBackupNudge && (
+        <div className="fixed bottom-4 right-4 z-50 glass-panel border border-th-border rounded-xl shadow-xl px-4 py-3 flex items-center gap-3 text-sm text-th-text1">
+          <span>Puzzle marked complete — back up your data?</span>
+          <button
+            onClick={exportData}
+            className="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Export
+          </button>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6 items-start">
         {/* Sidebar */}
