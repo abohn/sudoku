@@ -409,6 +409,14 @@ export default function Stats() {
   const months = Object.keys(byMonth).sort().slice(-12);
   const maxMonthCount = Math.max(...Object.values(byMonth), 1);
 
+  const byPublishedMonth: Record<string, number> = {};
+  for (const { video } of completedEntries) {
+    const month = video.published_at.slice(0, 7);
+    byPublishedMonth[month] = (byPublishedMonth[month] ?? 0) + 1;
+  }
+  const publishedMonths = Object.keys(byPublishedMonth).sort();
+  const maxPublishedCount = Math.max(...Object.values(byPublishedMonth), 1);
+
   const ctcWithTime = completedEntries.filter((e) => e.video.solve_duration_seconds != null);
   const avgCtcSeconds =
     ctcWithTime.length > 0
@@ -426,6 +434,11 @@ export default function Stats() {
   const [setterCumulative, setSetterCumulative] = useState(false);
   const [ppmHover, setPpmHover] = useState<{ m: string; count: number; idx: number } | null>(null);
   const [completionsHover, setCompletionsHover] = useState<{
+    m: string;
+    count: number;
+    idx: number;
+  } | null>(null);
+  const [publishedHover, setPublishedHover] = useState<{
     m: string;
     count: number;
     idx: number;
@@ -609,6 +622,56 @@ export default function Stats() {
           </div>
         ) : (
           <>
+            {/* Release dates of completed puzzles */}
+            {publishedMonths.length > 0 && (
+              <div className="bg-th-card rounded-xl border border-th-border p-4">
+                <h2 className="font-semibold text-sm text-th-text1 mb-4">
+                  Release dates of completed puzzles
+                </h2>
+                <div className="relative">
+                  {publishedHover && (
+                    <div
+                      className="absolute -top-6 pointer-events-none glass-panel border border-th-border rounded px-2 py-0.5 text-[10px] text-th-text1 shadow-lg z-10 -translate-x-1/2 whitespace-nowrap"
+                      style={{
+                        left: `${((publishedHover.idx + 0.5) / publishedMonths.length) * 100}%`,
+                      }}
+                    >
+                      {publishedHover.m}: {publishedHover.count}
+                    </div>
+                  )}
+                  <div className="flex items-end gap-px h-20">
+                    {publishedMonths.map((m, idx) => {
+                      const count = byPublishedMonth[m] ?? 0;
+                      const pct = Math.round((count / maxPublishedCount) * 100);
+                      return (
+                        <div
+                          key={m}
+                          className="flex-1 bg-indigo-400 rounded-sm opacity-80 hover:opacity-100 transition-opacity cursor-crosshair"
+                          style={{ height: `${Math.max(pct, 2)}%` }}
+                          onMouseEnter={() => setPublishedHover({ m, count, idx })}
+                          onMouseLeave={() => setPublishedHover(null)}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="relative mt-1 h-4">
+                    {publishedMonths
+                      .map((m, i) => ({ m, i }))
+                      .filter(({ m }) => m.endsWith("-01"))
+                      .map(({ m, i }) => (
+                        <span
+                          key={m}
+                          className="absolute text-[9px] text-th-text3 -translate-x-1/2"
+                          style={{ left: `${((i + 0.5) / publishedMonths.length) * 100}%` }}
+                        >
+                          {m.slice(0, 4)}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Completions by month */}
             {months.length > 0 && (
               <div className="bg-th-card rounded-xl border border-th-border p-4">
