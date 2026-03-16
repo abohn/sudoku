@@ -342,21 +342,21 @@ export default function Home() {
             >
               Feedback
             </a>
-            {/* Export / Import */}
+            {/* Save / Open backup */}
             <div className="flex border border-th-border rounded-lg overflow-hidden">
               <button
                 onClick={exportData}
-                title="Export backup"
+                title="Save backup file"
                 className="px-2.5 py-1.5 text-sm bg-th-card text-th-text2 hover:bg-th-hover transition-colors"
               >
-                Export
+                Save
               </button>
               <button
                 onClick={openImportPicker}
-                title="Import backup"
+                title="Open backup file"
                 className="px-2.5 py-1.5 text-sm bg-th-card text-th-text2 hover:bg-th-hover transition-colors border-l border-th-border"
               >
-                Import
+                Open
               </button>
             </div>
             {/* Theme toggle */}
@@ -391,7 +391,7 @@ export default function Home() {
             onClick={exportData}
             className="shrink-0 px-3 py-1 rounded-lg bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 transition-colors"
           >
-            Export now
+            Save now
           </button>
         </div>
       )}
@@ -399,12 +399,12 @@ export default function Home() {
       {/* Post-completion backup nudge toast */}
       {showBackupNudge && (
         <div className="fixed bottom-4 right-4 z-50 glass-panel border border-th-border rounded-xl shadow-xl px-4 py-3 flex items-center gap-3 text-sm text-th-text1">
-          <span>Puzzle marked complete — back up your data?</span>
+          <span>Puzzle marked complete — save a backup?</span>
           <button
             onClick={exportData}
             className="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors"
           >
-            Export
+            Save
           </button>
         </div>
       )}
