@@ -47,6 +47,7 @@ export default function Home() {
   const selectedSource = searchParams.get("source") ?? null;
   const selectedCollection = searchParams.get("collection") ?? null;
   const selectedCategory = (searchParams.get("cat") ?? null) as "sudoku" | "pencil" | "word" | null;
+  const youtubeIdParam = searchParams.get("yt") ?? undefined;
 
   const [rules, setRules] = useState<Rule[]>([]);
   const [setters, setSetters] = useState<Setter[]>([]);
@@ -141,6 +142,7 @@ export default function Home() {
           watchlistIds: watchlist,
           completedOnly,
           completedMap: completed,
+          youtubeId: youtubeIdParam,
           page: p,
           per_page: PER_PAGE,
         });
@@ -541,6 +543,7 @@ export default function Home() {
                       onMarkCompleted={(mins) => markCompleted(video.youtube_id, mins)}
                       onUnmarkCompleted={() => unmarkCompleted(video.youtube_id)}
                       onToggleWatchlist={() => toggleWatchlist(video.youtube_id)}
+                      highlighted={!!youtubeIdParam && video.youtube_id === youtubeIdParam}
                     />
                   ))}
               </div>

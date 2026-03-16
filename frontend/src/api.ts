@@ -86,6 +86,7 @@ export async function fetchPuzzles(params: {
   watchlistIds?: Set<string>;
   completedOnly?: boolean;
   completedMap?: Record<string, { completedAt: string }>;
+  youtubeId?: string;
   page?: number;
   per_page?: number;
 }): Promise<PaginatedVideos> {
@@ -106,12 +107,69 @@ export async function fetchPuzzles(params: {
     watchlistIds,
     completedOnly = false,
     completedMap,
+    youtubeId,
     page = 1,
     per_page = 24,
   } = params;
 
   const { videos } = await loadData();
   let items = videos;
+
+  // Direct lookup: ?yt= param or a YouTube/puzzle URL pasted into the search box.
+  function extractYoutubeId(s: string): string | null {
+    try {
+      const url = new URL(s);
+      if (url.hostname.includes("youtube.com")) return url.searchParams.get("v");
+      if (url.hostname === "youtu.be") return url.pathname.slice(1);
+    } catch {
+      /* not a URL */
+    }
+    return null;
+  }
+
+  function extractPuzzleUrl(s: string): string | null {
+    try {
+      const url = new URL(s);
+      if (
+        url.hostname.includes("crackingthecryptic.com") ||
+        url.hostname.includes("sudokupad.app") ||
+        url.hostname.includes("f-puzzles.com")
+      )
+        return s;
+    } catch {
+      /* not a URL */
+    }
+    return null;
+  }
+
+  const resolvedYtId = youtubeId ?? extractYoutubeId(searchQuery.trim());
+  const resolvedPuzzleUrl = !resolvedYtId ? extractPuzzleUrl(searchQuery.trim()) : null;
+
+  if (resolvedYtId) {
+    const found = items.filter((v) => v.youtube_id === resolvedYtId);
+    return {
+      items: found,
+      total: found.length,
+      page: 1,
+      pages: 1,
+      per_page,
+      histogram: [],
+      granularity: "month",
+    };
+  }
+
+  if (resolvedPuzzleUrl) {
+    const found = items.filter((v) => v.puzzle_url === resolvedPuzzleUrl);
+    return {
+      items: found,
+      total: found.length,
+      page: 1,
+      pages: 1,
+      per_page,
+      histogram: [],
+      granularity: "month",
+    };
+  }
 
   if (rules.length > 0) {
     items = items.filter((v) => {

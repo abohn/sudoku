@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { VideoSummary } from "../types";
 import { RuleTag } from "./RuleFilter";
 
@@ -43,6 +43,7 @@ interface Props {
   onMarkCompleted: (solveMinutes?: number) => void;
   onUnmarkCompleted: () => void;
   onToggleWatchlist: () => void;
+  highlighted?: boolean;
 }
 
 export default function PuzzleCard({
@@ -58,6 +59,7 @@ export default function PuzzleCard({
   onMarkCompleted,
   onUnmarkCompleted,
   onToggleWatchlist,
+  highlighted = false,
 }: Props) {
   const diff = difficultyLabel(video.difficulty_score);
   const ytUrl = `https://www.youtube.com/watch?v=${video.youtube_id}`;
@@ -82,6 +84,13 @@ export default function PuzzleCard({
   const [showModal, setShowModal] = useState(false);
   const [timeInput, setTimeInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (highlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlighted]);
 
   function openModal() {
     setTimeInput("");
@@ -96,7 +105,10 @@ export default function PuzzleCard({
   }
 
   return (
-    <article className="bg-th-card rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden border border-th-border">
+    <article
+      ref={cardRef}
+      className={`bg-th-card rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden border ${highlighted ? "border-indigo-500 ring-2 ring-indigo-500 ring-offset-2" : "border-th-border"}`}
+    >
       {/* Thumbnail */}
       <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="relative block">
         {video.thumbnail_url ? (
