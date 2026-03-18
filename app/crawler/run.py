@@ -249,6 +249,7 @@ def _run_migrations():
             "ALTER TABLE videos ADD COLUMN solver_name VARCHAR(100)",
             "ALTER TABLE videos ADD COLUMN source_name VARCHAR(200)",
             "ALTER TABLE rules ADD COLUMN category VARCHAR(50) DEFAULT 'sudoku'",
+            "ALTER TABLE videos ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0",
         ]:
             try:
                 conn.execute(text(stmt))
