@@ -12,6 +12,18 @@
   --th-text2: #6b7280;
   --th-text3: #9ca3af;
 
+  /* Sudoku grid background */
+  --grid-box: rgba(99, 102, 241, 0.07);
+  --grid-cell: rgba(99, 102, 241, 0.035);
+
+  /* Card gloss */
+  --card-gloss: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.02) 40%,
+    transparent 70%
+  );
+
   --sidebar-word-bg: #f0fdfa;
   --sidebar-word-border: #99f6e4;
   --sidebar-word-header: #0f766e;
@@ -35,6 +47,10 @@ html.dark {
   --th-text1: #efefef;
   --th-text2: #999999;
   --th-text3: #5e5e5e;
+
+  --grid-box: rgba(180, 180, 210, 0.06);
+  --grid-cell: rgba(180, 180, 210, 0.03);
+  --card-gloss: linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
 
   --sidebar-word-bg: rgba(20, 90, 80, 0.18);
   --sidebar-word-border: rgba(20, 184, 166, 0.35);
@@ -60,6 +76,15 @@ html.warm {
   --th-text2: #7c6055;
   --th-text3: #a89080;
 
+  --grid-box: rgba(110, 70, 30, 0.07);
+  --grid-cell: rgba(110, 70, 30, 0.035);
+  --card-gloss: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 40%,
+    transparent 70%
+  );
+
   --sidebar-word-bg: #ecfdf5;
   --sidebar-word-border: #6ee7b755;
   --sidebar-word-header: #065f46;
@@ -80,6 +105,17 @@ html.warm {
     background-color: var(--th-bg);
     color: var(--th-text1);
     @apply antialiased;
+    /* Sudoku grid: box boundaries every 72px (3 cells), cell lines every 24px */
+    background-image:
+      linear-gradient(var(--grid-box) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-box) 1px, transparent 1px),
+      linear-gradient(var(--grid-cell) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-cell) 1px, transparent 1px);
+    background-size:
+      72px 72px,
+      72px 72px,
+      24px 24px,
+      24px 24px;
   }
 
   /* Native inputs respect theme in dark mode */
@@ -88,6 +124,11 @@ html.warm {
   html.dark textarea {
     color-scheme: dark;
   }
+}
+
+/* ── Card gloss ─────────────────────────────────────────────── */
+.card-gloss {
+  background-image: var(--card-gloss);
 }
 
 /* ── Frosted glass (header + tooltips) ─────────────────────── */

@@ -64,6 +64,11 @@ export async function fetchCollections(): Promise<Collection[]> {
   return data.collections ?? [];
 }
 
+export async function fetchGeneratedAt(): Promise<string> {
+  const { generated_at } = await loadData();
+  return generated_at;
+}
+
 export async function fetchAllVideos(): Promise<VideoSummary[]> {
   const { videos } = await loadData();
   return videos;

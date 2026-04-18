@@ -15,7 +15,6 @@ re-apply updated rule logic to every cached video without any network calls.
 """
 
 import argparse
-import contextlib
 import os
 from datetime import UTC, datetime, timedelta
 
@@ -162,8 +161,7 @@ def _reprocess(cache: CrawlCache):
     """Re-parse rules for every cached video without any network calls."""
     print("Reprocess mode: re-parsing rules from cache (no API calls)")
     db = SessionLocal()
-    with contextlib.suppress(Exception):
-        seed_rules(db)
+    seed_rules(db)
 
     entries = list(cache._data.items())
     print(f"  Processing {len(entries)} cached video(s)...")
@@ -298,8 +296,7 @@ def crawl(
     print(f"  Found {len(video_ids)} video(s) to process")
 
     db = SessionLocal()
-    with contextlib.suppress(Exception):
-        seed_rules(db)
+    seed_rules(db)
 
     total = len(video_ids)
     for batch_start in range(0, total, 50):

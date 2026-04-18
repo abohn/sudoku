@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { fetchCollections, fetchPuzzles, fetchRules, fetchSetters, fetchSources } from "../api";
+import {
+  fetchCollections,
+  fetchGeneratedAt,
+  fetchPuzzles,
+  fetchRules,
+  fetchSetters,
+  fetchSources,
+} from "../api";
 import PuzzleCard from "../components/PuzzleCard";
 import RuleFilter from "../components/RuleFilter";
 import { useTheme } from "../context/ThemeContext";
@@ -20,6 +27,17 @@ import type {
 } from "../types";
 
 const PER_PAGE = 24;
+
+function formatTimeAgo(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 // Helpers to read/write URL search params cleanly
 function useParam(params: URLSearchParams, key: string): string {
@@ -49,6 +67,7 @@ export default function Home() {
   const selectedCategory = (searchParams.get("cat") ?? null) as "sudoku" | "pencil" | "word" | null;
   const youtubeIdParam = searchParams.get("yt") ?? undefined;
 
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [rules, setRules] = useState<Rule[]>([]);
   const [setters, setSetters] = useState<Setter[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
@@ -56,7 +75,6 @@ export default function Home() {
   const [results, setResults] = useState<PaginatedVideos | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
 
   const { theme, setTheme } = useTheme();
@@ -97,18 +115,6 @@ export default function Home() {
     );
   }
 
-  const activeFilterCount =
-    selectedRules.length +
-    selectedDifficulties.length +
-    (selectedSetter ? 1 : 0) +
-    (selectedSource ? 1 : 0) +
-    (selectedCollection ? 1 : 0) +
-    (searchQuery ? 1 : 0) +
-    (solveTime ? 1 : 0) +
-    (watchlistOnly ? 1 : 0) +
-    (completedOnly ? 1 : 0) +
-    (selectedCategory ? 1 : 0);
-
   useEffect(() => {
     fetchRules()
       .then(setRules)
@@ -121,6 +127,9 @@ export default function Home() {
       .catch(() => {});
     fetchCollections()
       .then(setCollections)
+      .catch(() => {});
+    fetchGeneratedAt()
+      .then(setGeneratedAt)
       .catch(() => {});
   }, []);
 
@@ -286,18 +295,6 @@ export default function Home() {
           </div>
 
           <div className="ml-auto flex items-center gap-2 flex-wrap">
-            {/* Mobile filter toggle */}
-            <button
-              onClick={() => setShowFilters((v) => !v)}
-              className="lg:hidden text-sm border border-th-border rounded-lg px-2.5 py-1.5 bg-th-card hover:bg-th-hover text-th-text2 flex items-center gap-1.5"
-            >
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="bg-blue-600 text-white text-xs font-medium rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
             <select
               value={sort}
               onChange={(e) => setParam("sort", e.target.value)}
@@ -411,7 +408,7 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6 items-start">
         {/* Sidebar */}
-        <div className={showFilters ? "block w-full lg:block" : "hidden lg:block"}>
+        <div>
           <RuleFilter
             rules={rules}
             selected={selectedRules}
@@ -640,16 +637,19 @@ export default function Home() {
         </main>
       </div>
 
-      <footer className="mt-8 pb-6 text-center text-xs text-th-text3">
-        Made by{" "}
-        <a
-          href="https://docs.google.com/forms/d/e/1FAIpQLSd8dru84uSsy8eMWLn2Jz44mhbOxp6cn3lAVyO1f_kq4kwrrA/viewform"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-th-text2 underline underline-offset-2"
-        >
-          Andy Bohn
-        </a>
+      <footer className="mt-8 pb-6 text-center text-xs text-th-text3 space-y-1">
+        <p>
+          Made by{" "}
+          <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSd8dru84uSsy8eMWLn2Jz44mhbOxp6cn3lAVyO1f_kq4kwrrA/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-th-text2 underline underline-offset-2"
+          >
+            Andy Bohn
+          </a>
+        </p>
+        {generatedAt && <p>Data updated {formatTimeAgo(generatedAt)}</p>}
       </footer>
     </div>
   );

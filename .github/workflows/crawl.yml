@@ -2,8 +2,7 @@ name: Crawl & Export
 
 on:
   schedule:
-    # Every day at 06:00 UTC
-    - cron: "0 6 * * *"
+    - cron: "0 * * * *"
   workflow_dispatch:
     inputs:
       months:
@@ -13,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   crawl:
@@ -59,3 +59,19 @@ jobs:
           git diff --staged --quiet && echo "Nothing to commit" && exit 0
           git commit -m "chore: update puzzle data $(date -u +%Y-%m-%d)"
           git push
+
+      - name: Open issue on failure
+        if: failure()
+        run: |
+          EXISTING=$(gh issue list --label "crawl-failure" --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "Issue #$EXISTING already open, skipping."
+          else
+            BODY=$(printf "Crawl failed — data.json was not updated.\n\n**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\n\nClose this issue once the crawl is healthy again.")
+            gh issue create \
+              --title "Crawl failed: $(date -u +%Y-%m-%d)" \
+              --body "$BODY" \
+              --label "crawl-failure"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

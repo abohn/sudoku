@@ -136,7 +136,7 @@ export default function RuleFilter({
 
   return (
     <aside className="w-full lg:w-64 shrink-0">
-      <div className="sticky top-4 overflow-y-auto max-h-[calc(100vh-6rem)] space-y-2">
+      <div className="lg:sticky lg:top-4 lg:overflow-y-auto lg:max-h-[calc(100vh-6rem)] space-y-2">
         {/* ---- Search ---- */}
         <div className="bg-th-card rounded-xl border border-th-border p-3">
           <input
@@ -149,7 +149,6 @@ export default function RuleFilter({
           <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5">
             {(
               [
-                { label: "Has puzzle link", checked: hasPuzzleUrl, onChange: onHasPuzzleUrlChange },
                 { label: "Saved only", checked: watchlistOnly, onChange: onWatchlistOnlyChange },
                 {
                   label: "Completed only",
@@ -161,6 +160,7 @@ export default function RuleFilter({
                   checked: hideCompleted,
                   onChange: onHideCompletedChange,
                 },
+                { label: "Has puzzle link", checked: hasPuzzleUrl, onChange: onHasPuzzleUrlChange },
               ] as const
             ).map(({ label, checked, onChange }) => (
               <label

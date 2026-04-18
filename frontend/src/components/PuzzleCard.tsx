@@ -107,7 +107,7 @@ export default function PuzzleCard({
   return (
     <article
       ref={cardRef}
-      className={`bg-th-card rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden border ${highlighted ? "border-indigo-500 ring-2 ring-indigo-500 ring-offset-2" : "border-th-border"}`}
+      className={`card-gloss bg-th-card rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden border ${highlighted ? "border-indigo-500 ring-2 ring-indigo-500 ring-offset-2" : "border-th-border"}`}
     >
       {/* Thumbnail */}
       <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="relative block">
@@ -140,10 +140,10 @@ export default function PuzzleCard({
           </span>
         )}
 
-        {/* Has puzzle badge */}
-        {video.puzzle_url && (
-          <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
-            Has puzzle
+        {/* No puzzle link badge */}
+        {!video.puzzle_url && (
+          <span className="absolute bottom-2 right-2 bg-black/50 text-white/80 text-[10px] px-1.5 py-0.5 rounded">
+            No puzzle link
           </span>
         )}
 
