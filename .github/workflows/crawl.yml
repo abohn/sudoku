@@ -6,9 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       months:
-        description: "How many months of history to fetch (leave blank for 1)"
+        description: "Months of history to fetch (ignored when full_rebuild is true)"
         required: false
         default: "1"
+      full_rebuild:
+        description: "Re-crawl entire channel history (rebuilds DB from scratch)"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -44,7 +49,11 @@ jobs:
           CTC_CHANNEL_ID: "@crackingthecryptic"
         run: |
           mkdir -p data
-          python -m app.crawler.run --months ${{ inputs.months || 1 }}
+          if [ "${{ inputs.full_rebuild }}" = "true" ]; then
+            python -m app.crawler.run --all
+          else
+            python -m app.crawler.run --months ${{ inputs.months || 1 }}
+          fi
 
       - name: Export static data
         run: python scripts/export_static.py

@@ -37,6 +37,10 @@
   --sidebar-sudoku-divider: #e0e7ff;
   --sidebar-sudoku-clear: #6366f1;
   --sidebar-sudoku-sublabel: #a5b4fc;
+
+  --sidebar-diff-bg: #fff7ed;
+  --sidebar-diff-border: #fed7aa;
+  --sidebar-diff-header: #c2410c;
 }
 
 html.dark {
@@ -65,6 +69,10 @@ html.dark {
   --sidebar-sudoku-divider: rgba(100, 90, 140, 0.2);
   --sidebar-sudoku-clear: #9d91cc;
   --sidebar-sudoku-sublabel: #6a6090;
+
+  --sidebar-diff-bg: rgba(120, 50, 10, 0.18);
+  --sidebar-diff-border: rgba(200, 100, 30, 0.35);
+  --sidebar-diff-header: #fb923c;
 }
 
 html.warm {
@@ -98,6 +106,10 @@ html.warm {
   --sidebar-sudoku-divider: #e0ceab;
   --sidebar-sudoku-clear: #92400e;
   --sidebar-sudoku-sublabel: #a07850;
+
+  --sidebar-diff-bg: #fef3e2;
+  --sidebar-diff-border: #f59e0b55;
+  --sidebar-diff-header: #92400e;
 }
 
 @layer base {
@@ -171,6 +183,14 @@ html.warm {
 }
 .sidebar-sudoku-sublabel {
   color: var(--sidebar-sudoku-sublabel);
+}
+
+.sidebar-diff {
+  background-color: var(--sidebar-diff-bg);
+  border-color: var(--sidebar-diff-border);
+}
+.sidebar-diff-header {
+  color: var(--sidebar-diff-header);
 }
 
 /* Rule tags inside themed sidebar sections — only unselected tags get the theme override */

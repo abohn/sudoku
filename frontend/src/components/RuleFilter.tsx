@@ -4,11 +4,36 @@ import SetterFilter from "./SetterFilter";
 
 const FREQUENT_THRESHOLD = 20; // video_count above this → always shown
 
-const DIFFICULTIES: { label: DifficultyLabel; display: string; activeCls: string }[] = [
-  { label: "easy", display: "Easy", activeCls: "bg-green-500 text-white border-green-500" },
-  { label: "medium", display: "Medium", activeCls: "bg-yellow-500 text-white border-yellow-500" },
-  { label: "hard", display: "Hard", activeCls: "bg-orange-500 text-white border-orange-500" },
-  { label: "brutal", display: "Brutal", activeCls: "bg-red-500 text-white border-red-500" },
+const DIFFICULTIES: {
+  label: DifficultyLabel;
+  display: string;
+  activeCls: string;
+  title: string;
+}[] = [
+  {
+    label: "easy",
+    display: "Easy",
+    activeCls: "bg-green-500 text-white border-green-500",
+    title: "Score < 3 — typically ≤ 29 min solve time",
+  },
+  {
+    label: "medium",
+    display: "Medium",
+    activeCls: "bg-yellow-500 text-white border-yellow-500",
+    title: "Score 3–5.5 — typically 29–52 min",
+  },
+  {
+    label: "hard",
+    display: "Hard",
+    activeCls: "bg-orange-500 text-white border-orange-500",
+    title: "Score 5.5–7.5 — typically 52–68 min",
+  },
+  {
+    label: "brutal",
+    display: "Brutal",
+    activeCls: "bg-red-500 text-white border-red-500",
+    title: 'Score ≥ 7.5 — 68+ min, or keywords like "brutal" / "genius" in title',
+  },
 ];
 
 const SOLVE_TIMES: { value: string; display: string }[] = [
@@ -117,6 +142,7 @@ export default function RuleFilter({
 }: Props) {
   const [showOccasionalSudoku, setShowOccasionalSudoku] = useState(false);
   const [showOccasionalPencil, setShowOccasionalPencil] = useState(false);
+  const [showDifficultyInfo, setShowDifficultyInfo] = useState(false);
 
   const sudokuRules = rules.filter((r) => r.category === "sudoku");
   const pencilRules = rules.filter((r) => r.category === "pencil");
@@ -179,19 +205,40 @@ export default function RuleFilter({
           </div>
         </div>
 
-        {/* ---- Difficulty + Solve time + Solver ---- */}
-        <div className="bg-th-card rounded-xl border border-th-border p-3 space-y-3">
+        {/* ---- Difficulty + Solve time ---- */}
+        <div className="sidebar-diff rounded-xl border p-3 space-y-3">
           <div>
-            <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
-              Difficulty
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="sidebar-diff-header text-[11px] font-semibold uppercase tracking-wider">
+                Difficulty
+              </p>
+              <button
+                onClick={() => setShowDifficultyInfo((v) => !v)}
+                title="How difficulty is estimated"
+                className={`w-4 h-4 rounded-full text-[10px] font-bold leading-none flex items-center justify-center border transition-colors ${
+                  showDifficultyInfo
+                    ? "bg-orange-500 text-white border-orange-500"
+                    : "sidebar-diff-header border-current opacity-60 hover:opacity-100"
+                }`}
+              >
+                ?
+              </button>
+            </div>
+            {showDifficultyInfo && (
+              <p className="text-[11px] text-th-text2 mb-2 leading-relaxed">
+                Estimated from solve duration (Easy ≈ ≤29 min → Brutal ≈ 68+ min). Title keywords
+                like &ldquo;brutal&rdquo; or &ldquo;genius&rdquo; push the score up;
+                &ldquo;easy&rdquo; or &ldquo;beginner&rdquo; pull it down.
+              </p>
+            )}
             <div className="flex flex-wrap gap-1.5">
-              {DIFFICULTIES.map(({ label, display, activeCls }) => {
+              {DIFFICULTIES.map(({ label, display, activeCls, title }) => {
                 const active = selectedDifficulties.includes(label);
                 return (
                   <button
                     key={label}
                     onClick={() => onToggleDifficulty(label)}
+                    title={title}
                     className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
                       active ? activeCls : "border-th-border text-th-text2 hover:bg-th-hover"
                     }`}
@@ -204,7 +251,7 @@ export default function RuleFilter({
           </div>
 
           <div className="border-t border-th-border pt-3">
-            <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
+            <p className="sidebar-diff-header text-[11px] font-semibold uppercase tracking-wider mb-2">
               Solve time
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -216,7 +263,7 @@ export default function RuleFilter({
                     onClick={() => onSolveTimeChange(active ? null : value)}
                     className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
                       active
-                        ? "bg-indigo-600 text-white border-indigo-600"
+                        ? "bg-orange-500 text-white border-orange-500"
                         : "border-th-border text-th-text2 hover:bg-th-hover"
                     }`}
                   >
@@ -226,38 +273,39 @@ export default function RuleFilter({
               })}
             </div>
           </div>
-
-          {sources.length > 0 && (
-            <div className="border-t border-th-border pt-3">
-              <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
-                Source
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {sources.map(({ name, count }) => {
-                  const active = selectedSource === name;
-                  return (
-                    <button
-                      key={name}
-                      onClick={() => onSelectSource(active ? null : name)}
-                      className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                        active
-                          ? "bg-indigo-600 text-white border-indigo-600"
-                          : "border-th-border text-th-text2 hover:bg-th-hover"
-                      }`}
-                    >
-                      {name}
-                      <span
-                        className={`ml-1 text-[10px] ${active ? "text-indigo-200" : "text-th-text3"}`}
-                      >
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* ---- Source ---- */}
+        {sources.length > 0 && (
+          <div className="bg-th-card rounded-xl border border-th-border p-3">
+            <p className="text-[11px] font-semibold text-th-text3 uppercase tracking-wider mb-2">
+              Source
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {sources.map(({ name, count }) => {
+                const active = selectedSource === name;
+                return (
+                  <button
+                    key={name}
+                    onClick={() => onSelectSource(active ? null : name)}
+                    className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                      active
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "border-th-border text-th-text2 hover:bg-th-hover"
+                    }`}
+                  >
+                    {name}
+                    <span
+                      className={`ml-1 text-[10px] ${active ? "text-indigo-200" : "text-th-text3"}`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ---- Word Puzzles ---- */}
         {wordRules.length > 0 && (
