@@ -59,7 +59,21 @@ jobs:
           fi
 
       - name: Export static data
-        run: python scripts/export_static.py
+        id: export
+        run: |
+          python scripts/export_static.py | tee /tmp/export.log
+          # Parse metrics from export output for job summary
+          VIDEO_COUNT=$(grep -oP 'Exported \K[0-9]+(?= videos)' /tmp/export.log || echo "?")
+          RULE_COUNT=$(grep -oP '[0-9]+(?= rules)' /tmp/export.log || echo "?")
+          SIZE=$(grep -oP '\(\K[0-9.]+ MB(?=\))' /tmp/export.log || echo "?")
+          echo "video_count=$VIDEO_COUNT" >> "$GITHUB_OUTPUT"
+          echo "## Crawl summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Videos exported | $VIDEO_COUNT |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Rules | $RULE_COUNT |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| data.json size | $SIZE |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Run type | ${{ inputs.full_rebuild == 'true' && 'full rebuild' || format('last {0} month(s)', inputs.months || '1') }} |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save database cache
         uses: actions/cache/save@v4
@@ -72,9 +86,21 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add frontend/public/data.json
-          git diff --staged --quiet && echo "Nothing to commit" && exit 0
+          if git diff --staged --quiet; then
+            echo "data_changed=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing to commit"
+            exit 0
+          fi
           git commit -m "chore: update puzzle data $(date -u +%Y-%m-%d)"
           git push
+          echo "data_changed=true" >> "$GITHUB_OUTPUT"
+        id: commit
+
+      - name: Trigger deploy
+        if: steps.commit.outputs.data_changed == 'true'
+        run: gh workflow run deploy.yml --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Open issue on failure
         if: failure()
