@@ -36,12 +36,15 @@ jobs:
         run: pip install -r requirements.txt
 
       # The DB is gitignored; restore it from cache so incremental crawls work.
+      # Split into restore + save so the updated DB is always written back,
+      # even on an exact cache hit (the combined action skips saving on hits).
       - name: Restore database cache
-        uses: actions/cache@v4
+        id: db-cache-restore
+        uses: actions/cache/restore@v4
         with:
           path: data/sudoku.db
-          key: sudoku-db-${{ runner.os }}
-          restore-keys: sudoku-db-
+          key: sudoku-db-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: sudoku-db-${{ runner.os }}-
 
       - name: Run crawler
         env:
@@ -58,7 +61,11 @@ jobs:
       - name: Export static data
         run: python scripts/export_static.py
 
-      # Cache is saved automatically after the job (even on failure) by actions/cache.
+      - name: Save database cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/sudoku.db
+          key: sudoku-db-${{ runner.os }}-${{ github.run_id }}
 
       - name: Commit updated data.json
         run: |
