@@ -57,7 +57,6 @@ export default function Home() {
   const selectedSetter = searchParams.get("setter") ?? null;
   const selectedDifficulties = (searchParams.get("diff")?.split(",").filter(Boolean) ??
     []) as DifficultyLabel[];
-  const solveTime = searchParams.get("solve") ?? undefined;
   const watchlistOnly = searchParams.get("watchlist") === "1";
   const completedOnly = searchParams.get("done") === "1";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
@@ -150,7 +149,6 @@ export default function Home() {
           category: selectedCategory ?? undefined,
           difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
           searchQuery,
-          solveTime,
           watchlistOnly,
           watchlistIds: watchlist,
           completedOnly,
@@ -187,7 +185,6 @@ export default function Home() {
         category: selectedCategory ?? undefined,
         difficulties: selectedDifficulties.length ? selectedDifficulties : undefined,
         searchQuery,
-        solveTime,
         watchlistOnly,
         watchlistIds: watchlist,
         completedOnly,
@@ -426,8 +423,6 @@ export default function Home() {
             onSelectSource={(name) => setParam("source", name)}
             searchQuery={searchQuery}
             onSearchChange={(q) => setParam("q", q || null)}
-            solveTime={solveTime}
-            onSolveTimeChange={(v) => setParam("solve", v)}
             hasPuzzleUrl={hasPuzzleUrl === true}
             onHasPuzzleUrlChange={(v) => setParam("puzzle", v ? "1" : null)}
             watchlistOnly={watchlistOnly}

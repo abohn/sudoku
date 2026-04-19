@@ -36,13 +36,6 @@ const DIFFICULTIES: {
   },
 ];
 
-const SOLVE_TIMES: { value: string; display: string }[] = [
-  { value: "lt30", display: "≤30 min" },
-  { value: "30-60", display: "30–60 min" },
-  { value: "60-90", display: "60–90 min" },
-  { value: "gt90", display: "90+ min" },
-];
-
 interface Props {
   rules: Rule[];
   selected: string[];
@@ -60,8 +53,6 @@ interface Props {
   onSelectSource: (name: string | null) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  solveTime: string | undefined;
-  onSolveTimeChange: (v: string | null) => void;
   hasPuzzleUrl: boolean;
   onHasPuzzleUrlChange: (v: boolean) => void;
   watchlistOnly: boolean;
@@ -124,8 +115,6 @@ export default function RuleFilter({
   onSelectSource,
   searchQuery,
   onSearchChange,
-  solveTime,
-  onSolveTimeChange,
   hasPuzzleUrl,
   onHasPuzzleUrlChange,
   watchlistOnly,
@@ -239,32 +228,8 @@ export default function RuleFilter({
                     key={label}
                     onClick={() => onToggleDifficulty(label)}
                     title={title}
-                    className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                    className={`text-xs px-2.5 py-1 rounded-md border font-medium transition-colors ${
                       active ? activeCls : "border-th-border text-th-text2 hover:bg-th-hover"
-                    }`}
-                  >
-                    {display}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="border-t border-th-border pt-3">
-            <p className="sidebar-diff-header text-[11px] font-semibold uppercase tracking-wider mb-2">
-              Solve time
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {SOLVE_TIMES.map(({ value, display }) => {
-                const active = solveTime === value;
-                return (
-                  <button
-                    key={value}
-                    onClick={() => onSolveTimeChange(active ? null : value)}
-                    className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                      active
-                        ? "bg-orange-500 text-white border-orange-500"
-                        : "border-th-border text-th-text2 hover:bg-th-hover"
                     }`}
                   >
                     {display}

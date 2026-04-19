@@ -86,7 +86,6 @@ export async function fetchPuzzles(params: {
   category?: "sudoku" | "pencil" | "word";
   difficulties?: DifficultyLabel[];
   searchQuery?: string;
-  solveTime?: string;
   watchlistOnly?: boolean;
   watchlistIds?: Set<string>;
   completedOnly?: boolean;
@@ -107,7 +106,6 @@ export async function fetchPuzzles(params: {
     category,
     difficulties = [],
     searchQuery = "",
-    solveTime,
     watchlistOnly = false,
     watchlistIds,
     completedOnly = false,
@@ -226,18 +224,6 @@ export async function fetchPuzzles(params: {
         (v.setter_name?.toLowerCase().includes(q) ?? false) ||
         v.rules.some((vr) => vr.rule.display_name.toLowerCase().includes(q))
     );
-  }
-
-  if (solveTime) {
-    items = items.filter((v) => {
-      const mins = v.solve_duration_seconds != null ? v.solve_duration_seconds / 60 : null;
-      if (mins == null) return false;
-      if (solveTime === "lt30") return mins < 30;
-      if (solveTime === "30-60") return mins >= 30 && mins < 60;
-      if (solveTime === "60-90") return mins >= 60 && mins < 90;
-      if (solveTime === "gt90") return mins >= 90;
-      return true;
-    });
   }
 
   if (watchlistOnly && watchlistIds) {

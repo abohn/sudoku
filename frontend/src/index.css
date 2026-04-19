@@ -38,9 +38,9 @@
   --sidebar-sudoku-clear: #6366f1;
   --sidebar-sudoku-sublabel: #a5b4fc;
 
-  --sidebar-diff-bg: #fff7ed;
-  --sidebar-diff-border: #fed7aa;
-  --sidebar-diff-header: #c2410c;
+  --sidebar-diff-bg: #fff1f2;
+  --sidebar-diff-border: #fecdd3;
+  --sidebar-diff-header: #be123c;
 }
 
 html.dark {
@@ -70,9 +70,9 @@ html.dark {
   --sidebar-sudoku-clear: #9d91cc;
   --sidebar-sudoku-sublabel: #6a6090;
 
-  --sidebar-diff-bg: rgba(120, 50, 10, 0.18);
-  --sidebar-diff-border: rgba(200, 100, 30, 0.35);
-  --sidebar-diff-header: #fb923c;
+  --sidebar-diff-bg: rgba(120, 10, 30, 0.18);
+  --sidebar-diff-border: rgba(200, 40, 70, 0.35);
+  --sidebar-diff-header: #fb7185;
 }
 
 html.warm {
@@ -107,9 +107,9 @@ html.warm {
   --sidebar-sudoku-clear: #92400e;
   --sidebar-sudoku-sublabel: #a07850;
 
-  --sidebar-diff-bg: #fef3e2;
-  --sidebar-diff-border: #f59e0b55;
-  --sidebar-diff-header: #92400e;
+  --sidebar-diff-bg: #fff1f2;
+  --sidebar-diff-border: #fda4af55;
+  --sidebar-diff-header: #9f1239;
 }
 
 @layer base {
